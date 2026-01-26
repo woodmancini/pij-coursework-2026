@@ -55,6 +55,7 @@ public class BoardParser {
 
         // Parse rest of file
         for (String line : lines) {
+            if (line.isBlank()) continue;
             result.add(parseRowFromString(line));
         }
 
@@ -71,7 +72,7 @@ public class BoardParser {
     }
 
     public static Board parseBoardFromFile() {
-        return parseBoardFromFile("resources" + File.separator + "defaultBoard.txt");
+        return parseBoardFromFile("defaultBoard.txt");
     }
 
     private static List<Square> parseRowFromString(String input) {

@@ -21,7 +21,4 @@ public class BoardParserTest {
         assertThrows(BoardParseException.class, () -> BoardParser.parseBoardFromFile("testBoardWrongNumberOfRows.txt"));
     }
 
-
-
-
 }

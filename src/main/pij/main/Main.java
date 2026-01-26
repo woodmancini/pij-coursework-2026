@@ -1,7 +1,8 @@
 package pij.main;
+
 import pij.board.Board;
 import pij.board.Square;
-
+import pij.game.GameRunner;
 import java.util.Arrays;
 import java.util.List;
 
@@ -11,8 +12,8 @@ public class Main {
 
     public static void main(String[] args) {
 
-        Board board = parseBoardFromFile();
-        board.printBoard();
+        var gameRunner = new GameRunner();
+        gameRunner.startGame();
 
     }
 

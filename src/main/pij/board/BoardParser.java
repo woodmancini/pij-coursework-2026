@@ -1,5 +1,6 @@
 package pij.board;
 
+import pij.exceptions.BoardParseException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -18,7 +19,7 @@ public class BoardParser {
 
         File boardFile = new File("resources" + File.separator + filePath);
         List<List<Square>> result = new ArrayList<>();
-        List<String> lines = new ArrayList<>();
+        List<String> lines = List.of();
 
         try (BufferedReader reader = new BufferedReader(new FileReader(boardFile))) {
             lines = new ArrayList<>(reader.readAllLines());
@@ -30,44 +31,50 @@ public class BoardParser {
         String firstLine = lines.removeFirst().strip();
         int columns = Integer.parseInt(firstLine);
         if ((columns < MIN_COLUMNS) || (columns > MAX_COLUMNS)) {
-            System.out.println("Error: " + columns + " is not a valid number of columns.");
-            return null;
+            throw new BoardParseException("Error: " + columns + " is not a valid number of columns.");
         }
 
         // Parse second line
         String secondLine = lines.removeFirst().strip();
         int rows = Integer.parseInt(secondLine);
         if ((rows < MIN_ROWS) || (rows > MAX_ROWS)) {
-            System.out.println("Error: " + rows + " is not a valid number of rows.");
-            return null;
+            throw new BoardParseException("Error: " + rows + " is not a valid number of rows.");
         }
 
         //Parse third line
         String thirdLine = lines.removeFirst().strip().toLowerCase();
         char columnIndex = thirdLine.charAt(0);
         if ((columnIndex < 'a') || (columnIndex > 'z')) {
-            System.out.println("Error setting start square: " + columnIndex + " is not a valid column.");
-            return null;
+            throw new BoardParseException("Error setting start square: " + columnIndex + " is not a valid column.");
         }
         int rowIndex = Integer.parseInt(thirdLine.substring(1));
         if ((rowIndex < 1) || (rowIndex > MAX_ROWS)) {
-            System.out.println("Error setting start square: " + rowIndex + " is not a valid row.");
-            return null;
+            throw new BoardParseException("Error setting start square: " + rowIndex + " is not a valid row.");
         }
-        var startSquare = new Coordinate(Character.getNumericValue(columnIndex) - 10, rowIndex);
+        var startSquare = new Coordinate(Character.getNumericValue(columnIndex) - 10, rowIndex - 1);
 
         // Parse rest of file
         for (String line : lines) {
             result.add(parseRowFromString(line));
         }
 
-        //return result;
+        if (rows != result.size()) {
+            throw new BoardParseException("Number of rows does not match file.");
+        }
+
+        if (columns != result.getFirst().size()) {
+            throw new BoardParseException("Number of columns does not match file.");
+        }
 
         return new Board(result, startSquare);
 
     }
 
-    public static List<Square> parseRowFromString(String input) {
+    public static Board parseBoardFromFile() {
+        return parseBoardFromFile("resources" + File.separator + "defaultBoard.txt");
+    }
+
+    private static List<Square> parseRowFromString(String input) {
         var result = new ArrayList<Square>();
         input = input.replaceAll("\\s+", "");
         while (!input.isEmpty()) {
@@ -86,6 +93,7 @@ public class BoardParser {
                     result.add(new LetterPremiumSquare('_', multiplier));
                     input = input.substring(input.indexOf("]") + 1);
                 }
+                default -> throw new BoardParseException("Cannot parse character: " + String.valueOf(input.charAt(0)));
             }
         }
         return result;

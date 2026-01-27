@@ -1,11 +1,13 @@
 package pij.tile;
 
-import java.awt.image.TileObserver;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class TileBag {
+
     private List<Tile> contents = new ArrayList<Tile>();
+
     public TileBag() {
         contents.add(Tile.J);
         contents.add(Tile.Q);
@@ -31,7 +33,6 @@ public class TileBag {
             contents.add(Tile.G);
             contents.add(Tile.L);
             contents.add(Tile.S);
-            contents.add(Tile.S);
         }
         for (int i = 0; i < 5; i++) {
             contents.add(Tile.T);
@@ -50,10 +51,23 @@ public class TileBag {
         for (int i = 0; i < 9; i++) {
             contents.add(Tile.E);
             contents.add(Tile.I);
-            contents.add(Tile.I);
         }
     }
     public  List<Tile> getContents() {
         return contents;
+    }
+
+    public List<Tile> drawTiles(int numberOfTiles) {
+        List<Tile> returnList = new ArrayList<>();
+        var random = new Random();
+
+        // remove tiles from bag at random indices and add them to returnList
+        for (int i = 0; i < numberOfTiles; i++) {
+            int index = random.nextInt(0, contents.size());
+            returnList.add(contents.remove(index));
+        }
+
+        return returnList;
+
     }
 }

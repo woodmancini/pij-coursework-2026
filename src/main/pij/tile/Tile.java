@@ -1,6 +1,7 @@
 package pij.tile;
 
 public enum Tile {
+
     A('a', 1),
     B('b', 3),
     C('c', 4),
@@ -43,5 +44,10 @@ public enum Tile {
 
     public int getTileMultiplier() {
         return tileMultiplier;
+    }
+
+    @Override
+    public String toString() {
+        return String.valueOf(Character.toUpperCase(letter)) + tileMultiplier;
     }
 }

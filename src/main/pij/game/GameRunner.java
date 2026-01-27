@@ -99,22 +99,5 @@ public class GameRunner {
 
     }
 
-    public boolean isValid(String word) {
-//        String word = "";
-//        for (Tile tile : move.word()) {
-//            var sb = new StringBuilder();
-//            sb.append(tile.letter().toLowerCase());
-//            word = sb.toString();
-//        }
-        File wordList = new File("resources" + File.separator + "wordlist.txt");
-        try (var reader = new BufferedReader(new FileReader(wordList))) {
-            String line = "";
-            while ((line = reader.readLine()) != null) {
-                if (line.strip().equals(word)) return true;
-            }
-        } catch (IOException e) {
-            System.out.println("Error finding word list file: " + e.getMessage());
-        }
-        return false;
-    }
+
 }

@@ -4,6 +4,7 @@ import static pij.board.BoardParser.*;
 import pij.board.Board;
 import pij.tile.Tile;
 
+import java.io.*;
 import java.util.Scanner;
 
 public class GameRunner {
@@ -98,13 +99,22 @@ public class GameRunner {
 
     }
 
-    public void isValid(Move move) {
-        String word = "";
-        for (Tile tile : move.word()) {
-            var sb = new StringBuilder();
-            sb.append(tile.letter().toLowerCase());
-            word = sb.toString();
+    public boolean isValid(String word) {
+//        String word = "";
+//        for (Tile tile : move.word()) {
+//            var sb = new StringBuilder();
+//            sb.append(tile.letter().toLowerCase());
+//            word = sb.toString();
+//        }
+        File wordList = new File("resources" + File.separator + "wordlist.txt");
+        try (var reader = new BufferedReader(new FileReader(wordList))) {
+            String line = "";
+            while ((line = reader.readLine()) != null) {
+                if (line.strip().equals(word)) return true;
+            }
+        } catch (IOException e) {
+            System.out.println("Error finding word list file: " + e.getMessage());
         }
-        // Check word against wordlist.txt
+        return false;
     }
 }

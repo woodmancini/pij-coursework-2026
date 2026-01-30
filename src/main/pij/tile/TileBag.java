@@ -1,8 +1,12 @@
 package pij.tile;
 
+import pij.game.Player;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
+import static pij.game.GameRunner.TILES_PER_PLAYER;
 
 public class TileBag {
 
@@ -53,21 +57,29 @@ public class TileBag {
             contents.add(Tile.I);
         }
     }
-    public  List<Tile> getContents() {
+    public List<Tile> getContents() {
         return contents;
     }
+    public int tilesRemaining() {
+        return this.getContents().size();
+    }
 
-    public List<Tile> drawTiles(int numberOfTiles) {
+    public void deal(Player recipient) {
+
+        int tilesToDeal =  TILES_PER_PLAYER - recipient.getHand().size();
+        if (tilesToDeal == 0) return;
         List<Tile> returnList = new ArrayList<>();
         var random = new Random();
 
+        //Can't draw more tiles than we have left in contents
+        tilesToDeal = Math.min(tilesToDeal, tilesRemaining());
+
         // remove tiles from bag at random indices and add them to returnList
-        for (int i = 0; i < numberOfTiles; i++) {
-            int index = random.nextInt(0, contents.size());
-            returnList.add(contents.remove(index));
+        for (int i = 0; i < tilesToDeal; i++) {
+            int randomIndex = random.nextInt(contents.size());
+            returnList.add(contents.remove(randomIndex));
         }
 
-        return returnList;
-
+        recipient.drawTiles(returnList);
     }
 }

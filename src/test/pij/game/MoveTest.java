@@ -16,4 +16,5 @@ public class MoveTest {
         Move move = new Move(List.of(Tile.A, Tile.P, Tile.P, Tile.L, Tile.E), new Coordinate(5, 5));
         assertTrue(move.isValidWord());
     }
+
 }

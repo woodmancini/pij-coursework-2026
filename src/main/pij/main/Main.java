@@ -11,6 +11,7 @@ import pij.tile.TileBag;
 import java.util.*;
 
 import static pij.board.BoardParser.*;
+import static pij.tile.Tile.toTile;
 
 public class Main {
 
@@ -18,8 +19,10 @@ public class Main {
 
         var gameRunner = new GameRunner();
         gameRunner.startGame();
+        //gameRunner.playGame();
 
-
+        //Should x and y be the other way around?
+        System.out.println(gameRunner.getBoard().getSquare(0,1));
 
     }
 

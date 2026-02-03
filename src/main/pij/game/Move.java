@@ -2,14 +2,13 @@ package pij.game;
 
 import pij.board.Coordinate;
 import pij.tile.Tile;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
 
-public record Move(List<Tile> word, Coordinate coordinate) {
+public record Move(List<Tile> word, Coordinate coordinate, boolean vertical) {
 
     public boolean isValidWord(Move this) {
 
@@ -32,4 +31,8 @@ public record Move(List<Tile> word, Coordinate coordinate) {
         return false;
     }
 
+    public boolean isValidMove(Move this) {
+        // check if enough space, if aligns with tiles on the board already
+        return true;
+    }
 }

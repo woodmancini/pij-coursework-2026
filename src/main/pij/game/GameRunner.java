@@ -1,17 +1,21 @@
 package pij.game;
 
 import static pij.board.BoardParser.*;
+import static pij.tile.Tile.toTile;
+
 import pij.board.Board;
+import pij.board.Coordinate;
 import pij.tile.Tile;
 import pij.tile.TileBag;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 public class GameRunner {
     public static final int TILES_PER_PLAYER = 7;
     private Board board;
-    private boolean playing = true;
     private boolean openGame;
     private Player Player1;
     private Player Player2;
@@ -36,14 +40,25 @@ public class GameRunner {
         openGame = confirmOpenGame();
         tileBag.deal(Player1);
         tileBag.deal(Player2);
-
-        requestTurn(Player1);
+        board.printBoard();
 
     }
 
+    public void playGame() {
+        while (tileBag.tilesRemaining() > 0 && !Player1.getHand().isEmpty() || !Player2.getHand().isEmpty()) {
+            Move P1Move = requestMove(Player1);
+            if (P1Move.isValidWord() && P1Move.isValidMove()) {
+                updateBoard(P1Move);
+            }
+            Move P2Move = requestMove(Player2);
+            if (P2Move.isValidWord() && P2Move.isValidMove()) {
+                updateBoard(P1Move);
+            }
+        }
+    }
 
     // TO DO start position should print in the format d7
-    public void requestTurn(Player player) {
+    public Move requestMove(Player player) {
 
         Player otherPlayer = player.getName().equals("Player 1") ? Player2 : Player1;
         board.printBoard();
@@ -68,7 +83,9 @@ public class GameRunner {
                 Entering "," passes the turn.
                 """, player.getName(), player.printHand());
 
-        String input = scanner.nextLine();
+        // Try catch?
+        String input = scanner.nextLine().strip();
+        return stringToMove(input);
 
     }
 
@@ -128,14 +145,44 @@ public class GameRunner {
         }
     }
 
-    public Move requestMove(Player player) {
-        return null;
+    //Are x and y the right way around when converting "d7" to coordinate?
+    public Move stringToMove(String input) {
+
+        String[] inputStrings = input.split(",");
+        char[] wordInChar = inputStrings[0].toCharArray();
+        List<Tile> wordInTiles = new ArrayList<>();
+        try {
+            for (char c : wordInChar) {
+                wordInTiles.add(toTile(c));
+            }
+        } catch (IllegalArgumentException e) {
+            System.out.println("Error reading your tile: " + e.getMessage());
+        }
+
+        boolean vertical = false;
+
+        String coordinate = inputStrings[1].strip();
+        int x = 0, y = 0;
+        if (Character.isLetter(coordinate.charAt(0))) {
+            vertical = true;
+            y = Coordinate.charToInt(coordinate.charAt(0));
+            x = Integer.parseInt(coordinate.substring(1)) - 1;
+        } else {
+            y = Coordinate.charToInt(coordinate.charAt(coordinate.length() - 1));
+            x = Integer.parseInt(coordinate.substring(0, coordinate.length() - 1)) - 1;
+        }
+
+        return new Move(wordInTiles, new Coordinate(x, y), vertical);
     }
 
     public void updateBoard(Move move) {
-
+        int x = move.coordinate().x();
+        int y = move.coordinate().y();
+        for (var tile : move.word()) {
+            board.getSquare(x, y).placeTile(tile);
+            if (move.vertical()) y++;
+            else x++;
+        }
     }
-
-
 
 }

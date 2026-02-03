@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static pij.tile.Tile.toTile;
 
 public class TileTest {
 
@@ -44,5 +45,25 @@ public class TileTest {
         int actual = tileCount.get(Tile.A);
         assertEquals(expected, actual);
     }
+
+    @Test
+    void testToTileStringWhiteSpace() {
+        Tile expected = Tile.T;
+        Tile actual = toTile("t ");
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void testToTileChar() {
+        Tile expected = Tile.Z;
+        Tile actual = toTile('z');
+        assertEquals(expected, actual);
+    }
+
+     @Test
+    void testToTileThrowsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> toTile('1'));
+    }
+
 
 }

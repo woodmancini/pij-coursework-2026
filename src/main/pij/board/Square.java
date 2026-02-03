@@ -1,7 +1,10 @@
 package pij.board;
 
+import pij.tile.Tile;
+
 public class Square {
-    char letter;
+    private char letter;
+    private Tile tile;
 
     public Square(char letter) {
         this.letter = letter;
@@ -9,6 +12,11 @@ public class Square {
 
     @Override
     public String toString() {
-        return " " + String.valueOf(this.letter) + " ";
+        if (this.tile == null) return " " + this.letter + " ";
+        else return tile.toString();
+    }
+
+    public void placeTile(Tile tile) {
+        this.tile = tile;
     }
 }

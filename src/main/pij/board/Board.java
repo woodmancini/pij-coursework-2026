@@ -4,20 +4,36 @@ import java.util.List;
 
 public class Board {
 
-    private List<List<Square>> board;
-    private Coordinate startSquare;
+    private final List<List<Square>> board;
+    private final Coordinate startSquare;
+    private final int SizeX;
+    private final int SizeY;
 
     public Board(List<List<Square>> board, Coordinate startSquare) {
         this.board = board;
         this.startSquare = startSquare;
+        this.SizeX = board.getFirst().size();
+        this.SizeY = board.size();
+    }
+
+    public int getSizeX() {
+        return SizeX;
+    }
+
+    public int getSizeY() {
+        return SizeY;
     }
 
     public Coordinate getStartSquare() {
         return startSquare;
     }
 
-    public Square getTile(int column, int row) {
-        return board.get(row).get(column);
+    public Square getSquare(Coordinate coordinate) {
+        return board.get(coordinate.x()).get(coordinate.y());
+    }
+
+    public Square getSquare(int x, int y) {
+        return board.get(x).get(y);
     }
 
     public void printBoard() {
@@ -39,20 +55,11 @@ public class Board {
         System.out.println(alphaIndices);
     }
 
-    public static char intToChar(int i) {
-        List<Character> alphabet = List.of(
-                'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
-                'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
-                's', 't', 'u', 'v', 'w', 'x', 'y', 'z'
-        );
-        return alphabet.get(i);
-    }
-
     private String generateAlphaIndices(int length) {
         var sb = new StringBuilder("    ");
         for (int i = 0; i < board.getFirst().size(); i++) {
             sb.append(" ")
-                    .append(intToChar(i))
+                    .append(Coordinate.intToChar(i))
                     .append(" ");
         }
         return sb.toString();

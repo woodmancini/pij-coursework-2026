@@ -30,13 +30,13 @@ public enum Tile {
     Z('z', 9),
     WILDCARD('_', 8);
 
+    private final char letter;
+    private final int tileMultiplier;
+
     Tile(char letter, int tileMultiplier) {
         this.letter = letter;
         this.tileMultiplier = tileMultiplier;
     }
-
-    private final char letter;
-    private final int tileMultiplier;
 
     public char getLetter() {
         return this.letter;
@@ -50,4 +50,16 @@ public enum Tile {
     public String toString() {
         return String.valueOf(Character.toUpperCase(letter)) + tileMultiplier;
     }
+
+    public static Tile toTile(char c) {
+        String str = String.valueOf(c);
+        return toTile(str);
+    }
+
+    public static Tile toTile(String str) throws IllegalArgumentException {
+        str = str.toUpperCase().strip();
+        if (str.equals("_")) return Tile.WILDCARD;
+        return Tile.valueOf(str);
+    }
+
 }

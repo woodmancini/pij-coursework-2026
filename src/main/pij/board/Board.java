@@ -33,7 +33,7 @@ public class Board {
     }
 
     public Square getSquare(int x, int y) {
-        return board.get(x).get(y);
+        return board.get(y).get(x);
     }
 
     public void printBoard() {

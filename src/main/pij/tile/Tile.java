@@ -1,45 +1,44 @@
 package pij.tile;
 
-public enum Tile {
+import java.util.HashMap;
+import java.util.Map;
 
-    A('a', 1),
-    B('b', 3),
-    C('c', 4),
-    D('d', 2),
-    E('e', 2),
-    F('f', 4),
-    G('g', 3),
-    H('h', 4),
-    I('i', 1),
-    J('j', 11),
-    K('k', 6),
-    L('l', 1),
-    M('m', 3),
-    N('n', 1),
-    O('o', 1),
-    P('p', 3),
-    Q('q', 12),
-    R('r', 1),
-    S('s', 1),
-    T('t', 1),
-    U('u', 1),
-    V('v', 4),
-    W('w', 4),
-    X('x', 9),
-    Y('y', 5),
-    Z('z', 9),
-    WILDCARD('_', 8);
+import static java.util.Map.entry;
 
-    private final char letter;
+public class Tile {
+    private char letter;
     private final int tileMultiplier;
+    private boolean isWildcard;
+    private static final Map<Character, Integer> lookUpMultiplier = Map.ofEntries(
+            entry('A', 1), entry('B', 3), entry('C', 4), entry('D', 2), entry('E', 2),
+            entry('F', 4), entry('G', 3), entry('H', 4), entry('I', 1), entry('J', 11),
+            entry('K', 6), entry('L', 1), entry('M', 3), entry('N', 1), entry('O', 1),
+            entry('P', 3), entry('Q', 12), entry('R', 1), entry('S', 1), entry('T', 1),
+            entry('U', 1), entry('V', 4), entry('W', 4), entry('X', 9), entry('Y', 5),
+            entry('Z', 9)
+    );
 
-    Tile(char letter, int tileMultiplier) {
-        this.letter = letter;
-        this.tileMultiplier = tileMultiplier;
+    public Tile(char letter) {
+        if (letter == '_' || Character.isLowerCase(letter)) {
+            isWildcard = true;
+            this.letter = letter;
+            this.tileMultiplier = 8;
+        } else {
+            this.letter = letter;
+            this.tileMultiplier = lookUpMultiplier.get(letter);
+        }
     }
 
     public char getLetter() {
         return this.letter;
+    }
+
+    public void setLetter(char c) {
+        if (this.isWildcard()) this.letter = c;
+    }
+
+    public boolean isWildcard(){
+        return isWildcard;
     }
 
     public int getTileMultiplier() {
@@ -48,18 +47,16 @@ public enum Tile {
 
     @Override
     public String toString() {
-        return String.valueOf(Character.toUpperCase(letter)) + tileMultiplier;
+        return String.valueOf(letter) + tileMultiplier;
     }
 
-    public static Tile toTile(char c) {
-        String str = String.valueOf(c);
-        return toTile(str);
-    }
-
-    public static Tile toTile(String str) throws IllegalArgumentException {
-        str = str.toUpperCase().strip();
-        if (str.equals("_")) return Tile.WILDCARD;
-        return Tile.valueOf(str);
+    @Override
+    public boolean equals(Object object) {
+       if (object instanceof Tile other) {
+           if (this.isWildcard()) return other.isWildcard();
+           else return this.getLetter() == (other.getLetter());
+       }
+       return false;
     }
 
 }

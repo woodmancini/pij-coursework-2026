@@ -17,7 +17,7 @@ public record Move(List<Tile> word, Coordinate coordinate, boolean vertical) {
         for (Tile tile : this.word()) {
             sb.append(tile.getLetter());
         }
-        String word = sb.toString();
+        String word = sb.toString().toLowerCase();
 
         File wordList = new File("resources" + File.separator + "wordlist.txt");
         try (var reader = new BufferedReader(new FileReader(wordList))) {

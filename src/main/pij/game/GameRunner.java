@@ -1,7 +1,8 @@
 package pij.game;
 
+import static java.util.stream.Collectors.*;
 import static pij.board.BoardParser.*;
-import static pij.tile.Tile.toTile;
+
 
 import pij.board.Board;
 import pij.board.Coordinate;
@@ -9,9 +10,7 @@ import pij.tile.Tile;
 import pij.tile.TileBag;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class GameRunner {
     public static final int TILES_PER_PLAYER = 7;
@@ -40,20 +39,15 @@ public class GameRunner {
         openGame = confirmOpenGame();
         tileBag.deal(Player1);
         tileBag.deal(Player2);
-        board.printBoard();
 
     }
 
     public void playGame() {
         while (tileBag.tilesRemaining() > 0 && !Player1.getHand().isEmpty() || !Player2.getHand().isEmpty()) {
             Move P1Move = requestMove(Player1);
-            if (P1Move.isValidWord() && P1Move.isValidMove()) {
-                updateBoard(P1Move);
-            }
+            if (P1Move != null) updateBoard((P1Move));
             Move P2Move = requestMove(Player2);
-            if (P2Move.isValidWord() && P2Move.isValidMove()) {
-                updateBoard(P1Move);
-            }
+            if (P2Move != null) updateBoard(P2Move);
         }
     }
 
@@ -69,7 +63,7 @@ public class GameRunner {
             System.out.printf("""
                     OPEN GAME: %s's tiles:
                     OPEN GAME: %s
-                    """, otherPlayer, otherPlayer.printHand());
+                    """, otherPlayer.getName(), otherPlayer.printHand());
         }
 
         System.out.printf("""
@@ -83,10 +77,98 @@ public class GameRunner {
                 Entering "," passes the turn.
                 """, player.getName(), player.printHand());
 
-        // Try catch?
-        String input = scanner.nextLine().strip();
-        return stringToMove(input);
 
+        //Should be its own method that throws a MoveParseException with error message.
+        //Would be better as a do-while with one check isValidInput() at the end in the while bit?
+        requestInput:
+        while (true) {
+
+            String input = scanner.nextLine().strip();
+
+            //Pass the turn
+            if (input.equals(",")) {
+                System.out.println("The move is: pass!\n");
+                return null;
+            }
+
+            if (!input.contains(",")) {
+                System.out.println("Error: your move doesn't contain a comma. Try again:");
+                continue;
+            }
+
+            String[] inputStrings = input.split(",");
+
+            //Check that comma splits input into two
+            if (inputStrings.length != 2) {
+                System.out.println("Error: please include one comma only. Try again:");
+                continue;
+            }
+
+            String wordString = inputStrings[0].strip();
+
+            //Validate word as String...
+            //This won't work because we have to account for words that include tiles already on the board.
+            if (!isValidWord(wordString)) {
+                System.out.println("That's not a valid word. Please try again!");
+                continue;
+            }
+
+            //How to check that every letter including wildcards is present only once in hand...
+            //Count elements and check word.count <= hand.count?
+            //This could be a method
+            //Does this work??
+            char[] wordInChar = wordString.toCharArray();
+            Map<Character, Integer> letterCount = new HashMap<>();
+            for (char c : wordInChar) {
+                if (Character.isLowerCase(c)) {
+                    letterCount.put('_', letterCount.getOrDefault('_',0) + 1);
+                } else {
+                    letterCount.put(c, letterCount.getOrDefault(c,0) + 1);
+                }
+            }
+
+            Map<Character, Integer> tileCount = player.getHand().stream()
+                    .collect(groupingBy(Tile::getLetter, summingInt(tile -> 1)));
+
+            for (Character key : letterCount.keySet()) {
+                if (!tileCount.containsKey(key) || letterCount.get(key) > tileCount.get(key)) {
+                    System.out.println("You don't have the necessary tiles for that word. Please try again:");
+                    continue requestInput;
+                }
+            }
+
+            List<Tile> wordInTiles = new ArrayList<>();
+            for (char c : wordInChar) {
+                wordInTiles.add(new Tile(c));
+            }
+
+            boolean vertical = false;
+
+            String coordinate = inputStrings[1].strip();
+            int x = 0, y = 0;
+            if (Character.isLetter(coordinate.charAt(0))) {
+                vertical = true;
+                x = Coordinate.charToInt(coordinate.charAt(0));
+                y = Integer.parseInt(coordinate.substring(1)) - 1;
+            } else {
+                x = Coordinate.charToInt(coordinate.charAt(coordinate.length() - 1));
+                y = Integer.parseInt(coordinate.substring(0, coordinate.length() - 1)) - 1;
+            }
+
+            Move move =  new Move(wordInTiles, new Coordinate(x, y), vertical);
+
+            if (!move.isValidMove()) {
+                System.out.println("Error: that's not a valid move. Try again!");
+            }
+
+            for (Tile tile : wordInTiles) {
+                player.getHand().remove(tile);
+            }
+            tileBag.deal(player);
+            System.out.printf("The move is... letters: %s at position %s%n", inputStrings[0], coordinate);
+            System.out.println();
+            return move;
+        }
     }
 
     private boolean confirmOpenGame() {
@@ -145,44 +227,29 @@ public class GameRunner {
         }
     }
 
-    //Are x and y the right way around when converting "d7" to coordinate?
-    public Move stringToMove(String input) {
-
-        String[] inputStrings = input.split(",");
-        char[] wordInChar = inputStrings[0].toCharArray();
-        List<Tile> wordInTiles = new ArrayList<>();
-        try {
-            for (char c : wordInChar) {
-                wordInTiles.add(toTile(c));
-            }
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error reading your tile: " + e.getMessage());
-        }
-
-        boolean vertical = false;
-
-        String coordinate = inputStrings[1].strip();
-        int x = 0, y = 0;
-        if (Character.isLetter(coordinate.charAt(0))) {
-            vertical = true;
-            y = Coordinate.charToInt(coordinate.charAt(0));
-            x = Integer.parseInt(coordinate.substring(1)) - 1;
-        } else {
-            y = Coordinate.charToInt(coordinate.charAt(coordinate.length() - 1));
-            x = Integer.parseInt(coordinate.substring(0, coordinate.length() - 1)) - 1;
-        }
-
-        return new Move(wordInTiles, new Coordinate(x, y), vertical);
-    }
-
     public void updateBoard(Move move) {
         int x = move.coordinate().x();
         int y = move.coordinate().y();
         for (var tile : move.word()) {
             board.getSquare(x, y).placeTile(tile);
-            if (move.vertical()) y++;
-            else x++;
+            if (!move.vertical()) x++;
+            else y++;
         }
+    }
+
+    public boolean isValidWord(String word) {
+        File wordList = new File(System.getProperty("user.dir") + File.separator +
+                "resources" + File.separator + "wordlist.txt");
+        word = word.toLowerCase().strip();
+        try (var reader = new BufferedReader(new FileReader(wordList))) {
+            String line = "";
+            while ((line = reader.readLine()) != null) {
+                if (line.strip().equals(word)) return true;
+            }
+        } catch (IOException e) {
+            System.out.println("Error finding word list file: " + e.getMessage());
+        }
+        return false;
     }
 
 }

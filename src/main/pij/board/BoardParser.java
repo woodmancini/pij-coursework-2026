@@ -13,9 +13,10 @@ public class BoardParser {
     public static final int MIN_ROWS = 10;
     public static final int MAX_ROWS = 99;
 
+    //Should there be a version that takes in an absolute filepath?
     public static Board parseBoardFromFile(String filePath) {
 
-        File boardFile = new File("resources" + File.separator + filePath);
+        File boardFile = new File(System.getProperty("user.dir") + File.separator + filePath);
         List<List<Square>> result = new ArrayList<>();
         List<String> lines = List.of();
 
@@ -70,7 +71,7 @@ public class BoardParser {
     }
 
     public static Board parseBoardFromFile() {
-        return parseBoardFromFile("defaultBoard.txt");
+        return parseBoardFromFile("resources" + File.separator + "defaultBoard.txt");
     }
 
     private static List<Square> parseRowFromString(String input) {
@@ -79,17 +80,17 @@ public class BoardParser {
         while (!input.isEmpty()) {
             switch (input.charAt(0)) {
                 case '.' -> {
-                    result.add(new Square('_'));
+                    result.add(new Square());
                     input = input.substring(1);
                 }
                 case '<' -> {
                     int multiplier = Integer.parseInt(input.substring(1, input.indexOf(">")));
-                    result.add(new WordPremiumSquare('_', multiplier));
+                    result.add(new WordPremiumSquare(multiplier));
                     input = input.substring(input.indexOf(">") + 1);
                 }
                 case '[' -> {
                     int multiplier = Integer.parseInt(input.substring(1, input.indexOf("]")));
-                    result.add(new LetterPremiumSquare('_', multiplier));
+                    result.add(new LetterPremiumSquare(multiplier));
                     input = input.substring(input.indexOf("]") + 1);
                 }
                 default -> throw new BoardParseException("Cannot parse character: " + String.valueOf(input.charAt(0)));

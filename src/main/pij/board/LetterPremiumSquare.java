@@ -1,13 +1,23 @@
 package pij.board;
 
+import pij.tile.Tile;
+
 public class LetterPremiumSquare extends Square {
-    int multiplier;
-    public LetterPremiumSquare(char letter, int multiplier) {
-        super(letter);
-    this.multiplier = multiplier;
+
+    private int multiplier;
+
+    public LetterPremiumSquare(int multiplier) {
+        this.multiplier = multiplier;
     }
+
+    public int getMultiplier() {
+        return this.multiplier;
+    }
+
     @Override
     public String toString() {
-        return String.valueOf(this.multiplier);
+        if (getTile() == null) return String.valueOf(this.multiplier);
+        else return getTile().toString();
     }
+
 }

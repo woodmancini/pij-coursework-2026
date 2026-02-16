@@ -4,8 +4,8 @@ import static java.util.stream.Collectors.*;
 import static pij.board.BoardParser.*;
 
 
-import pij.board.Board;
-import pij.board.Coordinate;
+import pij.board.*;
+import pij.exceptions.IllegalMoveException;
 import pij.tile.Tile;
 import pij.tile.TileBag;
 
@@ -13,6 +13,7 @@ import java.io.*;
 import java.util.*;
 
 public class GameRunner {
+
     public static final int TILES_PER_PLAYER = 7;
     private Board board;
     private boolean openGame;
@@ -20,6 +21,11 @@ public class GameRunner {
     private Player Player2;
     private final Scanner scanner = new Scanner(System.in);
     private TileBag tileBag = new TileBag();
+    private boolean isFirstMove = true;
+
+    public void firstMoveTaken() {
+        this.isFirstMove = false;
+    }
 
     public Board getBoard() {
         return board;
@@ -45,13 +51,19 @@ public class GameRunner {
     public void playGame() {
         while (tileBag.tilesRemaining() > 0 && !Player1.getHand().isEmpty() || !Player2.getHand().isEmpty()) {
             Move P1Move = requestMove(Player1);
-            if (P1Move != null) updateBoard((P1Move));
+            if (P1Move != null) {
+                Player1.updateScore(makeMove((P1Move)));
+                printScores();
+            }
+
             Move P2Move = requestMove(Player2);
-            if (P2Move != null) updateBoard(P2Move);
+            if (P2Move != null) {
+                Player2.updateScore(makeMove(P2Move));
+                printScores();
+            }
         }
     }
 
-    // TO DO start position should print in the format d7
     public Move requestMove(Player player) {
 
         Player otherPlayer = player.getName().equals("Player 1") ? Player2 : Player1;
@@ -77,103 +89,120 @@ public class GameRunner {
                 Entering "," passes the turn.
                 """, player.getName(), player.printHand());
 
-
-        //Should be its own method that throws a MoveParseException with error message.
-        //Would be better as a do-while with one check isValidInput() at the end in the while bit?
-        requestInput:
         while (true) {
 
-            String input = scanner.nextLine().strip();
+            String input = scanner.nextLine().replaceAll("\\s+", "");
 
-            //Pass the turn
             if (input.equals(",")) {
                 System.out.println("The move is: pass!\n");
                 return null;
             }
 
-            if (!input.contains(",")) {
-                System.out.println("Error: your move doesn't contain a comma. Try again:");
+            Move move;
+
+            try {
+
+                String[] inputStrings = validateMoveInput(input);
+
+                char[] wordInChar = inputStrings[0].toCharArray();
+                String coordinate = inputStrings[1];
+
+                checkPlayerHasTiles(wordInChar, player);
+
+                move = buildMove(wordInChar, coordinate);
+
+                validateMove(move);
+
+            } catch (IllegalMoveException e) {
+                System.out.println(e.getMessage());
                 continue;
             }
 
-            String[] inputStrings = input.split(",");
-
-            //Check that comma splits input into two
-            if (inputStrings.length != 2) {
-                System.out.println("Error: please include one comma only. Try again:");
-                continue;
-            }
-
-            String wordString = inputStrings[0].strip();
-
-            //Validate word as String...
-            //This won't work because we have to account for words that include tiles already on the board.
-            if (!isValidWord(wordString)) {
-                System.out.println("That's not a valid word. Please try again!");
-                continue;
-            }
-
-            //How to check that every letter including wildcards is present only once in hand...
-            //Count elements and check word.count <= hand.count?
-            //This could be a method
-            //Does this work??
-            char[] wordInChar = wordString.toCharArray();
-            Map<Character, Integer> letterCount = new HashMap<>();
-            for (char c : wordInChar) {
-                if (Character.isLowerCase(c)) {
-                    letterCount.put('_', letterCount.getOrDefault('_',0) + 1);
-                } else {
-                    letterCount.put(c, letterCount.getOrDefault(c,0) + 1);
-                }
-            }
-
-            Map<Character, Integer> tileCount = player.getHand().stream()
-                    .collect(groupingBy(Tile::getLetter, summingInt(tile -> 1)));
-
-            for (Character key : letterCount.keySet()) {
-                if (!tileCount.containsKey(key) || letterCount.get(key) > tileCount.get(key)) {
-                    System.out.println("You don't have the necessary tiles for that word. Please try again:");
-                    continue requestInput;
-                }
-            }
-
-            List<Tile> wordInTiles = new ArrayList<>();
-            for (char c : wordInChar) {
-                wordInTiles.add(new Tile(c));
-            }
-
-            boolean vertical = false;
-
-            String coordinate = inputStrings[1].strip();
-            int x = 0, y = 0;
-            if (Character.isLetter(coordinate.charAt(0))) {
-                vertical = true;
-                x = Coordinate.charToInt(coordinate.charAt(0));
-                y = Integer.parseInt(coordinate.substring(1)) - 1;
-            } else {
-                x = Coordinate.charToInt(coordinate.charAt(coordinate.length() - 1));
-                y = Integer.parseInt(coordinate.substring(0, coordinate.length() - 1)) - 1;
-            }
-
-            Move move =  new Move(wordInTiles, new Coordinate(x, y), vertical);
-
-            if (!move.isValidMove()) {
-                System.out.println("Error: that's not a valid move. Try again!");
-            }
-
-            for (Tile tile : wordInTiles) {
+            for (Tile tile : move.word()) {
                 player.getHand().remove(tile);
             }
             tileBag.deal(player);
-            System.out.printf("The move is... letters: %s at position %s%n", inputStrings[0], coordinate);
-            System.out.println();
+
+            System.out.printf("The move is... letters: %s at position %s%n", move.wordToString(), move.coordinate());
             return move;
+
         }
+    }
+
+    private Move buildMove(char[] wordInChar, String coordinate) throws IllegalMoveException {
+
+        List<Tile> wordInTiles = new ArrayList<>();
+        boolean vertical = false;
+        int x, y, length = coordinate.length();
+
+        for (char c : wordInChar) {
+            wordInTiles.add(new Tile(c));
+        }
+
+        // What error does this throw? Can I catch it?
+        if (Character.isLetter(coordinate.charAt(0))) {
+            vertical = true;
+            x = Coordinate.charToInt(coordinate.charAt(0));
+            y = Integer.parseInt(coordinate.substring(1)) - 1;
+        } else if (Character.isLetter(coordinate.charAt(length - 1))) {
+            x = Coordinate.charToInt(coordinate.charAt(length - 1));
+            y = Integer.parseInt(coordinate.substring(0, length - 1)) - 1;
+        } else throw new IllegalMoveException(coordinate + "is not a valid square, please try again:");
+
+        return new Move(wordInTiles, new Coordinate(x, y), vertical);
+
+    }
+
+    private void printScores() {
+        System.out.printf("""
+                Player 1 score: %s
+                Player 2 score: %s
+                
+                """, Player1.getScore(), Player2.getScore());
+    }
+
+    private String[] validateMoveInput(String input) throws IllegalMoveException {
+
+        if (!input.contains(",")) {
+            throw new IllegalMoveException("Error: your move doesn't contain a comma. Try again:");
+        }
+
+        String[] inputStrings = input.split(",");
+
+        //Check that comma splits input into two
+        if (inputStrings.length != 2) {
+            throw new IllegalMoveException("Error: please include one comma only. Try again:");
+        }
+
+        return inputStrings;
+    }
+
+    private void checkPlayerHasTiles(char[] wordInChar, Player player) throws IllegalMoveException {
+
+        Map<Character, Integer> letterCount = new HashMap<>();
+
+        for (char c : wordInChar) {
+            if (Character.isLowerCase(c)) {
+                letterCount.put('_', letterCount.getOrDefault('_',0) + 1);
+            } else {
+                letterCount.put(c, letterCount.getOrDefault(c,0) + 1);
+            }
+        }
+
+        Map<Character, Integer> tileCount = player.getHand().stream()
+                .collect(groupingBy(Tile::getLetter, summingInt(tile -> 1)));
+
+        for (Character key : letterCount.keySet()) {
+            if (!tileCount.containsKey(key) || letterCount.get(key) > tileCount.get(key)) {
+                throw new IllegalMoveException("You don't have the necessary tiles for that word. Please try again:");
+            }
+        }
+
     }
 
     private boolean confirmOpenGame() {
         while (true) {
-            System.out.println("""
+            System.out.print("""
                     Would you like to play an _o_pen or a _c_losed game?
                     Please enter your choice (o/c): 
                     """);
@@ -209,7 +238,7 @@ public class GameRunner {
 
     public Board requestBoard() {
         while (true) {
-            System.out.println("""
+            System.out.print("""
                     Would you like to _l_oad a board or use the _d_efault board?
                     Please enter your choice (l/d): 
                     """);
@@ -227,17 +256,35 @@ public class GameRunner {
         }
     }
 
-    public void updateBoard(Move move) {
+    // Place tiles on the board and return score
+    public int makeMove(Move move) {
+        if (isFirstMove) firstMoveTaken();
+        int score = 0;
+        int wordMultiplier = 1;
         int x = move.coordinate().x();
         int y = move.coordinate().y();
+
+        // Have to update this to work like validateMove()
         for (var tile : move.word()) {
-            board.getSquare(x, y).placeTile(tile);
+            var square = board.getSquare(x, y);
+            // Have to check for tiles already on board...
+            square.placeTile(tile);
+            switch (square) {
+                case WordPremiumSquare wordPremiumSquare -> {
+                    wordMultiplier *= wordPremiumSquare.getMultiplier();
+                    score += tile.getTileMultiplier();
+                }
+                case LetterPremiumSquare letterPremiumSquare -> score += letterPremiumSquare.getMultiplier() * tile.getTileMultiplier();
+                default -> score += tile.getTileMultiplier();
+            }
+
             if (!move.vertical()) x++;
             else y++;
         }
+        return score * wordMultiplier;
     }
 
-    public boolean isValidWord(String word) {
+    private boolean isValidWord(String word) {
         File wordList = new File(System.getProperty("user.dir") + File.separator +
                 "resources" + File.separator + "wordlist.txt");
         word = word.toLowerCase().strip();
@@ -250,6 +297,55 @@ public class GameRunner {
             System.out.println("Error finding word list file: " + e.getMessage());
         }
         return false;
+    }
+
+    //Should also validate the word against wordlist
+    public void validateMove(Move move) throws IllegalMoveException {
+        //go through squares, appending letters to a StringBuilder, until we run out of square or tiles in move
+        var sb = new StringBuilder();
+        int x = move.coordinate().x();
+        int y = move.coordinate().y();
+        Square currentSquare;
+        int i = 0;
+        var coordinatesVisited = new ArrayList<Coordinate>();
+
+        //Order of operations:
+        //Check if there is a square at that coord
+        //If yes, check if there's a tile
+        //Add square tile letter to StringBuilder
+        //Else add move tile letter to StringBuilder
+        //Repeat
+        while (i < move.word().size()) {
+
+            try {
+                currentSquare = board.getSquare(x, y);
+                coordinatesVisited.add(new Coordinate(x, y));
+            } catch (IndexOutOfBoundsException e) {
+                throw new IllegalMoveException("Error: not enough squares on the board!");
+            }
+
+            if (currentSquare.getTile() != null) {
+                sb.append(currentSquare.getTile().getLetter());
+                //add the tile on the board to the word
+            } else {
+                sb.append(move.word().get(i).getLetter());
+                i++;
+            }
+
+            if (!move.vertical()) x++;
+            else y++;
+
+        }
+
+        if (isFirstMove && !coordinatesVisited.contains(board.getStartSquare())) {
+            throw new IllegalMoveException("Error: the first move must use the start square " + board.getStartSquare() + ".");
+        }
+
+        String wordString = sb.toString();
+        if (!isValidWord(wordString)) {
+            throw new IllegalMoveException("Error: that's not a valid word, please try again:");
+        }
+
     }
 
 }

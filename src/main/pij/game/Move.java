@@ -31,8 +31,12 @@ public record Move(List<Tile> word, Coordinate coordinate, boolean vertical) {
         return false;
     }
 
-    public boolean isValidMove(Move this) {
-        // check if enough space, if aligns with tiles on the board already
-        return true;
+    public String wordToString() {
+        var sb = new StringBuilder();
+        for (Tile tile : word) {
+            sb.append(tile.getLetter());
+        }
+        return sb.toString();
     }
+
 }

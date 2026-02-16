@@ -4,14 +4,24 @@ import pij.tile.Tile;
 
 public class Square {
 
-    private Tile tile;
+    private int multiplier = 1;
 
-    public void setTile(Tile tile) {
-        this.tile = tile;
-    }
+    private Tile tile;
 
     public Tile getTile() {
         return tile;
+    }
+
+    public void placeTile(Tile tile) {
+        this.tile = tile;
+    }
+
+    public int getMultiplier() {
+        return multiplier;
+    }
+
+    public void setMultiplier(int m) {
+        this.multiplier = m;
     }
 
     @Override
@@ -20,7 +30,4 @@ public class Square {
         else return getTile().toString();
     }
 
-    public void placeTile(Tile tile) {
-        setTile(tile);
-    }
 }

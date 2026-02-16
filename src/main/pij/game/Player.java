@@ -38,4 +38,8 @@ public abstract sealed class Player permits HumanPlayer, CPU {
         }
         return sj.toString();
     }
+
+    public void updateScore(int i) {
+        this.score += i;
+    }
 }

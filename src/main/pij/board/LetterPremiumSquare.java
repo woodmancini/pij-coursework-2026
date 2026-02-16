@@ -4,7 +4,7 @@ import pij.tile.Tile;
 
 public class LetterPremiumSquare extends Square {
 
-    private int multiplier;
+    private final int multiplier;
 
     public LetterPremiumSquare(int multiplier) {
         this.multiplier = multiplier;

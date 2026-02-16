@@ -11,8 +11,6 @@ public class Main {
         gameRunner.startGame();
         gameRunner.playGame();
 
-
-
     }
 
 }

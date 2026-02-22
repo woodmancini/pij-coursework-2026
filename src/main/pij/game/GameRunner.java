@@ -99,6 +99,7 @@ public class GameRunner {
             }
 
             Move move;
+            String finalWord;
 
             try {
 
@@ -111,7 +112,7 @@ public class GameRunner {
 
                 move = buildMove(wordInChar, coordinate);
 
-                validateMove(move);
+                finalWord = validateMove(move);
 
             } catch (IllegalMoveException e) {
                 System.out.println(e.getMessage());
@@ -123,7 +124,7 @@ public class GameRunner {
             }
             tileBag.deal(player);
 
-            System.out.printf("The move is... letters: %s at position %s%n", move.wordToString(), move.coordinate());
+            System.out.printf("The move is... word: %s at position %s.%n", finalWord, move.coordinate());
             return move;
 
         }
@@ -263,24 +264,35 @@ public class GameRunner {
         int wordMultiplier = 1;
         int x = move.coordinate().x();
         int y = move.coordinate().y();
+        int i = 0;
 
-        // Have to update this to work like validateMove()
-        for (var tile : move.word()) {
+        // Add scores of tiles to the left/above
+
+        while (i < move.word().size()) {
             var square = board.getSquare(x, y);
-            // Have to check for tiles already on board...
-            square.placeTile(tile);
-            switch (square) {
-                case WordPremiumSquare wordPremiumSquare -> {
-                    wordMultiplier *= wordPremiumSquare.getMultiplier();
-                    score += tile.getTileMultiplier();
+            if (square.getTile() != null) {
+                score += square.getTile().getTileMultiplier();
+            }
+            else {
+                Tile tile = move.word().get(i);
+                square.placeTile(tile);
+                switch (square) {
+                    case WordPremiumSquare wordPremiumSquare -> {
+                        wordMultiplier *= wordPremiumSquare.getMultiplier();
+                        score += tile.getTileMultiplier();
+                    }
+                    case LetterPremiumSquare letterPremiumSquare ->
+                            score += letterPremiumSquare.getMultiplier() * tile.getTileMultiplier();
+                    default -> score += tile.getTileMultiplier();
                 }
-                case LetterPremiumSquare letterPremiumSquare -> score += letterPremiumSquare.getMultiplier() * tile.getTileMultiplier();
-                default -> score += tile.getTileMultiplier();
+                i++;
             }
 
             if (!move.vertical()) x++;
             else y++;
         }
+        // Add scores of tiles to the right
+
         return score * wordMultiplier;
     }
 
@@ -299,8 +311,7 @@ public class GameRunner {
         return false;
     }
 
-    //Should also validate the word against wordlist
-    public void validateMove(Move move) throws IllegalMoveException {
+    public String validateMove(Move move) throws IllegalMoveException {
         //go through squares, appending letters to a StringBuilder, until we run out of square or tiles in move
         var sb = new StringBuilder();
         int x = move.coordinate().x();
@@ -309,12 +320,10 @@ public class GameRunner {
         int i = 0;
         var coordinatesVisited = new ArrayList<Coordinate>();
 
-        //Order of operations:
-        //Check if there is a square at that coord
-        //If yes, check if there's a tile
-        //Add square tile letter to StringBuilder
-        //Else add move tile letter to StringBuilder
-        //Repeat
+        //Currently doesn't add score, need to update makeMove()
+        if (move.vertical()) sb.append(checkAbove(x, y));
+        else sb.append(checkLeft(x,y));
+
         while (i < move.word().size()) {
 
             try {
@@ -337,6 +346,18 @@ public class GameRunner {
 
         }
 
+        //Need to replace this with checkRight() and checkBelow()
+        // Check if there's a tile on the board at the end of the word
+        if (move.vertical() && y < board.getSizeY()) {
+            if (board.getSquare(x, y).getTile() != null) {
+                sb.append(board.getSquare(x, y).getTile().getLetter());
+            }
+        } else if (x < board.getSizeX()) {
+            if (board.getSquare(x, y).getTile() != null) {
+                sb.append(board.getSquare(x, y).getTile().getLetter());
+            }
+        }
+
         if (isFirstMove && !coordinatesVisited.contains(board.getStartSquare())) {
             throw new IllegalMoveException("Error: the first move must use the start square " + board.getStartSquare() + ".");
         }
@@ -346,6 +367,65 @@ public class GameRunner {
             throw new IllegalMoveException("Error: that's not a valid word, please try again:");
         }
 
+        return wordString;
+
     }
 
+    /**
+     * Checks if letter(s) exist on board above start square, and returns them as a String.
+     */
+    private String checkLeft(int x, int y) {
+        x = x - 1;
+        var result = new StringBuilder();
+        while (x >= 0 && board.getSquare(x, y).getTile() != null)  {
+            result.append(board.getSquare(x, y).getTile().getLetter());
+            x--;
+        }
+        return result.reverse().toString();
+    }
+
+    /**
+     * Checks if letter(s) exist on board right of start square, and returns them as a String.
+     * @param x x co-ordinate of start square.
+     * @param y y co-ordinate of start square.
+     * @return A String containing letter(s) to the right of start square.
+     */
+    private String checkRight(int x, int y) {
+        x = x + 1;
+        var result = new StringBuilder();
+        while (x < board.getSizeX() && board.getSquare(x, y).getTile() != null)  {
+            result.append(board.getSquare(x, y).getTile().getLetter());
+            x++;
+        }
+        return result.reverse().toString();
+    }
+
+    /**
+     * Checks if letter(s) exist on board below start square, and returns them as a String.
+     * @param x x co-ordinate of start square.
+     * @param y y co-ordinate of start square.
+     * @return A String containing letter(s) below start square.
+     */
+    private String checkBelow(int x, int y) {
+        y = + 1;
+        var result = new StringBuilder();
+        while (y < board.getSizeY() && board.getSquare(x, y).getTile() != null)  {
+            result.append(board.getSquare(x, y).getTile().getLetter());
+            y++;
+        }
+        return result.reverse().toString();
+    }
+
+    /**
+     * Checks if letter(s) exist on board above start square, and returns them as a String.
+     */
+    private String checkAbove(int x, int y) {
+        y = y - 1;
+        var result = new StringBuilder();
+        while (y >= 0 && board.getSquare(x, y).getTile() != null)  {
+            result.append(board.getSquare(x, y).getTile().getLetter());
+            y--;
+        }
+        return result.reverse().toString();
+    }
 }

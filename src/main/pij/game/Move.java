@@ -10,6 +10,7 @@ import java.util.List;
 
 public record Move(List<Tile> word, Coordinate coordinate, boolean vertical) {
 
+    //Can delete?
     public boolean isValidWord(Move this) {
 
         //Turn tiles into a String word
@@ -31,6 +32,7 @@ public record Move(List<Tile> word, Coordinate coordinate, boolean vertical) {
         return false;
     }
 
+    //Not useful?
     public String wordToString() {
         var sb = new StringBuilder();
         for (Tile tile : word) {

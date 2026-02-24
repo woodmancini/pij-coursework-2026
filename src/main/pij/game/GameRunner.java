@@ -14,7 +14,6 @@ import java.util.*;
 
 public class GameRunner {
 
-    public static final int TILES_PER_PLAYER = 7;
     private Board board;
     private boolean openGame;
     private Player Player1;
@@ -130,7 +129,7 @@ public class GameRunner {
         }
     }
 
-    private Move buildMove(char[] wordInChar, String coordinate) throws IllegalMoveException {
+    public Move buildMove(char[] wordInChar, String coordinate) throws IllegalMoveException {
 
         List<Tile> wordInTiles = new ArrayList<>();
         boolean vertical = false;
@@ -258,6 +257,7 @@ public class GameRunner {
     }
 
     // Place tiles on the board and return score
+    // Maybe should be in the player class?
     public int makeMove(Move move) {
         if (isFirstMove) firstMoveTaken();
         int score = 0;
@@ -266,8 +266,10 @@ public class GameRunner {
         int y = move.coordinate().y();
         int i = 0;
 
-        // Add scores of tiles to the left/above
+        if (move.vertical()) score += addScoresAbove(x, y);
+        else score += addScoresLeft(x, y);
 
+        // Place tiles on the board and add up scores
         while (i < move.word().size()) {
             var square = board.getSquare(x, y);
             if (square.getTile() != null) {
@@ -291,7 +293,10 @@ public class GameRunner {
             if (!move.vertical()) x++;
             else y++;
         }
-        // Add scores of tiles to the right
+
+        // Add scores of existing tiles to the right/below
+        if (move.vertical()) score += addScoresBelow(x, y);
+        else score += addScoresRight(x, y);
 
         return score * wordMultiplier;
     }
@@ -311,8 +316,83 @@ public class GameRunner {
         return false;
     }
 
+    //Maybe can call sub methods makeMoveVertical and makeMoveHorizontal? Would remove a lot of if move.vertical() checks
     public String validateMove(Move move) throws IllegalMoveException {
-        //go through squares, appending letters to a StringBuilder, until we run out of square or tiles in move
+
+
+        String wordString = move.vertical() ? validateVerticalMove(move) : validateHorizontalMove(move);
+
+//        boolean isAdjacentMove = false;
+//
+//        //go through squares, appending letters to a StringBuilder, until we run out of square or tiles in move
+//        var sb = new StringBuilder();
+//        int x = move.coordinate().x();
+//        int y = move.coordinate().y();
+//        Square currentSquare;
+//        int i = 0;
+//        var coordinatesVisited = new ArrayList<Coordinate>();
+//
+////        String startWord = checkAbove(x, y);
+////        if (!startWord.isEmpty()) {
+////            isAdjacentMove = true;
+////            sb.append(startWord);
+////        }
+//        if (move.vertical()) sb.append(checkAbove(x, y));
+//        else sb.append(checkLeft(x,y));
+//
+//        while (i < move.word().size()) {
+//
+//            try {
+//                currentSquare = board.getSquare(x, y);
+//                coordinatesVisited.add(new Coordinate(x, y));
+//            } catch (IndexOutOfBoundsException e) {
+//                throw new IllegalMoveException("Error: not enough squares on the board!");
+//            }
+//
+//            if (currentSquare.getTile() != null) {
+//                sb.append(currentSquare.getTile().getLetter());
+//                isAdjacentMove = true;
+//            } else {
+//                //check if tiles perpendicular to word (not allowed)
+//                if (move.vertical() && (board.getSquare(x - 1, y).getTile() != null
+//                        || board.getSquare(x + 1, y).getTile() != null)) {
+//                    throw new IllegalMoveException("Error: can't place parallel to an existing word.");
+//                } else if (board.getSquare(x, y - 1).getTile() != null
+//                        || board.getSquare(x, y + 1).getTile() != null) {
+//                    throw new IllegalMoveException("Error: can't place parallel to an existing word.");
+//                }
+//                sb.append(move.word().get(i).getLetter());
+//                i++;
+//            }
+//
+//            if (!move.vertical()) x++;
+//            else y++;
+//
+//        }
+//
+//
+//        if (move.vertical()) sb.append(checkBelow(x, y));
+//        else sb.append(checkRight(x,y));
+//
+//        //Inefficient? We don't really need to keep a record of every square visited, we could just check as we go?
+//        if (isFirstMove && !coordinatesVisited.contains(board.getStartSquare())) {
+//            throw new IllegalMoveException("Error: the first move must use the start square " + board.getStartSquare() + ".");
+//        } else if (!isAdjacentMove) {
+//            throw new IllegalMoveException("Error: your word must use a letter already on the board.");
+//        }
+
+//        String wordString = sb.toString();
+
+        if (!isValidWord(wordString)) {
+            throw new IllegalMoveException("Error: " + wordString + " is not a valid word, please try again:");
+        }
+
+        return wordString;
+
+    }
+
+    private String validateHorizontalMove(Move move) throws IllegalMoveException {
+        boolean isAdjacentMove = false;
         var sb = new StringBuilder();
         int x = move.coordinate().x();
         int y = move.coordinate().y();
@@ -320,12 +400,15 @@ public class GameRunner {
         int i = 0;
         var coordinatesVisited = new ArrayList<Coordinate>();
 
-        //Currently doesn't add score, need to update makeMove()
-        if (move.vertical()) sb.append(checkAbove(x, y));
-        else sb.append(checkLeft(x,y));
+        String startWord = checkLeft(x, y);
+        if (!startWord.isEmpty()) {
+            isAdjacentMove = true;
+            sb.append(startWord);
+        }
 
         while (i < move.word().size()) {
 
+            //This could be a method common to both horiz and vertical check methods??
             try {
                 currentSquare = board.getSquare(x, y);
                 coordinatesVisited.add(new Coordinate(x, y));
@@ -335,40 +418,132 @@ public class GameRunner {
 
             if (currentSquare.getTile() != null) {
                 sb.append(currentSquare.getTile().getLetter());
-                //add the tile on the board to the word
+                isAdjacentMove = true;
             } else {
+                //check if tiles perpendicular to word (not allowed)
+                if (board.getSquare(x, y + 1).getTile() != null
+                        || board.getSquare(x, y - 1).getTile() != null) {
+                    throw new IllegalMoveException("Error: can't place parallel to an existing word.");
+                }
                 sb.append(move.word().get(i).getLetter());
                 i++;
             }
 
-            if (!move.vertical()) x++;
-            else y++;
+            x++;
 
         }
 
-        //Need to replace this with checkRight() and checkBelow()
-        // Check if there's a tile on the board at the end of the word
-        if (move.vertical() && y < board.getSizeY()) {
-            if (board.getSquare(x, y).getTile() != null) {
-                sb.append(board.getSquare(x, y).getTile().getLetter());
-            }
-        } else if (x < board.getSizeX()) {
-            if (board.getSquare(x, y).getTile() != null) {
-                sb.append(board.getSquare(x, y).getTile().getLetter());
-            }
+        String endWord = checkRight(x, y);
+        if (!endWord.isEmpty()) {
+            isAdjacentMove = true;
+            sb.append(endWord);
         }
 
+        //Inefficient? We don't really need to keep a record of every square visited, we could just check as we go?
         if (isFirstMove && !coordinatesVisited.contains(board.getStartSquare())) {
             throw new IllegalMoveException("Error: the first move must use the start square " + board.getStartSquare() + ".");
+        } else if (!isAdjacentMove) {
+            throw new IllegalMoveException("Error: your word must use a letter already on the board.");
         }
 
-        String wordString = sb.toString();
-        if (!isValidWord(wordString)) {
-            throw new IllegalMoveException("Error: that's not a valid word, please try again:");
+        return sb.toString();
+    }
+
+    private String validateVerticalMove(Move move) throws IllegalMoveException {
+
+        boolean isAdjacentMove = false;
+        var sb = new StringBuilder();
+        int x = move.coordinate().x();
+        int y = move.coordinate().y();
+        Square currentSquare;
+        int i = 0;
+        var coordinatesVisited = new ArrayList<Coordinate>();
+
+        String startWord = checkAbove(x, y);
+        if (!startWord.isEmpty()) {
+            isAdjacentMove = true;
+            sb.append(startWord);
         }
 
-        return wordString;
+        while (i < move.word().size()) {
 
+            //This could be a method common to both horiz and vertical check methods??
+            try {
+                currentSquare = board.getSquare(x, y);
+                coordinatesVisited.add(new Coordinate(x, y));
+            } catch (IndexOutOfBoundsException e) {
+                throw new IllegalMoveException("Error: not enough squares on the board!");
+            }
+
+            if (currentSquare.getTile() != null) {
+                sb.append(currentSquare.getTile().getLetter());
+                isAdjacentMove = true;
+            } else {
+                //check if tiles perpendicular to word (not allowed)
+                if (board.getSquare(x - 1, y).getTile() != null
+                        || board.getSquare(x + 1, y).getTile() != null) {
+                    throw new IllegalMoveException("Error: can't place parallel to an existing word.");
+                }
+                sb.append(move.word().get(i).getLetter());
+                i++;
+            }
+
+            y++;
+
+        }
+
+        String endWord = checkBelow(x, y);
+        if (!endWord.isEmpty()) {
+            isAdjacentMove = true;
+            sb.append(endWord);
+        }
+
+        //Inefficient? We don't really need to keep a record of every square visited, we could just check as we go?
+        if (isFirstMove && !coordinatesVisited.contains(board.getStartSquare())) {
+            throw new IllegalMoveException("Error: the first move must use the start square " + board.getStartSquare() + ".");
+        } else if (!isAdjacentMove) {
+            throw new IllegalMoveException("Error: your word must use a letter already on the board.");
+        }
+
+        return sb.toString();
+    }
+
+    private int addScoresLeft(int x, int y) {
+        x = x - 1;
+        int score = 0;
+        while (x >= 0 && board.getSquare(x, y).getTile() != null)  {
+            score += board.getSquare(x, y).getTile().getTileMultiplier();
+            x--;
+        }
+        return score;
+    }
+
+    private int addScoresRight(int x, int y) {
+        int score = 0;
+        while (x >= 0 && board.getSquare(x, y).getTile() != null)  {
+            score += board.getSquare(x, y).getTile().getTileMultiplier();
+            x++;
+        }
+        return score;
+    }
+
+    private int addScoresAbove(int x, int y) {
+        y = y - 1;
+        int score = 0;
+        while (y >= 0 && board.getSquare(x, y).getTile() != null)  {
+            score += board.getSquare(x, y).getTile().getTileMultiplier();
+            y--;
+        }
+        return score;
+    }
+
+    private int addScoresBelow(int x, int y) {
+        int score = 0;
+        while (x >= 0 && board.getSquare(x, y).getTile() != null)  {
+            score += board.getSquare(x, y).getTile().getTileMultiplier();
+            y++;
+        }
+        return score;
     }
 
     /**
@@ -391,7 +566,6 @@ public class GameRunner {
      * @return A String containing letter(s) to the right of start square.
      */
     private String checkRight(int x, int y) {
-        x = x + 1;
         var result = new StringBuilder();
         while (x < board.getSizeX() && board.getSquare(x, y).getTile() != null)  {
             result.append(board.getSquare(x, y).getTile().getLetter());
@@ -407,7 +581,6 @@ public class GameRunner {
      * @return A String containing letter(s) below start square.
      */
     private String checkBelow(int x, int y) {
-        y = + 1;
         var result = new StringBuilder();
         while (y < board.getSizeY() && board.getSquare(x, y).getTile() != null)  {
             result.append(board.getSquare(x, y).getTile().getLetter());
@@ -427,5 +600,9 @@ public class GameRunner {
             y--;
         }
         return result.reverse().toString();
+    }
+
+    public void setBoard(Board board) {
+        this.board = board;
     }
 }

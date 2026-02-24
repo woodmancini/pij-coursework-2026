@@ -6,10 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import static pij.game.GameRunner.TILES_PER_PLAYER;
-
 public class TileBag {
 
+    public static final int TILES_PER_PLAYER = 7;
     private final List<Tile> contents = new ArrayList<>();
 
     public TileBag() {

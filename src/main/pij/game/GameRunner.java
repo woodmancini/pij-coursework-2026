@@ -316,72 +316,9 @@ public class GameRunner {
         return false;
     }
 
-    //Maybe can call sub methods makeMoveVertical and makeMoveHorizontal? Would remove a lot of if move.vertical() checks
     public String validateMove(Move move) throws IllegalMoveException {
 
-
         String wordString = move.vertical() ? validateVerticalMove(move) : validateHorizontalMove(move);
-
-//        boolean isAdjacentMove = false;
-//
-//        //go through squares, appending letters to a StringBuilder, until we run out of square or tiles in move
-//        var sb = new StringBuilder();
-//        int x = move.coordinate().x();
-//        int y = move.coordinate().y();
-//        Square currentSquare;
-//        int i = 0;
-//        var coordinatesVisited = new ArrayList<Coordinate>();
-//
-////        String startWord = checkAbove(x, y);
-////        if (!startWord.isEmpty()) {
-////            isAdjacentMove = true;
-////            sb.append(startWord);
-////        }
-//        if (move.vertical()) sb.append(checkAbove(x, y));
-//        else sb.append(checkLeft(x,y));
-//
-//        while (i < move.word().size()) {
-//
-//            try {
-//                currentSquare = board.getSquare(x, y);
-//                coordinatesVisited.add(new Coordinate(x, y));
-//            } catch (IndexOutOfBoundsException e) {
-//                throw new IllegalMoveException("Error: not enough squares on the board!");
-//            }
-//
-//            if (currentSquare.getTile() != null) {
-//                sb.append(currentSquare.getTile().getLetter());
-//                isAdjacentMove = true;
-//            } else {
-//                //check if tiles perpendicular to word (not allowed)
-//                if (move.vertical() && (board.getSquare(x - 1, y).getTile() != null
-//                        || board.getSquare(x + 1, y).getTile() != null)) {
-//                    throw new IllegalMoveException("Error: can't place parallel to an existing word.");
-//                } else if (board.getSquare(x, y - 1).getTile() != null
-//                        || board.getSquare(x, y + 1).getTile() != null) {
-//                    throw new IllegalMoveException("Error: can't place parallel to an existing word.");
-//                }
-//                sb.append(move.word().get(i).getLetter());
-//                i++;
-//            }
-//
-//            if (!move.vertical()) x++;
-//            else y++;
-//
-//        }
-//
-//
-//        if (move.vertical()) sb.append(checkBelow(x, y));
-//        else sb.append(checkRight(x,y));
-//
-//        //Inefficient? We don't really need to keep a record of every square visited, we could just check as we go?
-//        if (isFirstMove && !coordinatesVisited.contains(board.getStartSquare())) {
-//            throw new IllegalMoveException("Error: the first move must use the start square " + board.getStartSquare() + ".");
-//        } else if (!isAdjacentMove) {
-//            throw new IllegalMoveException("Error: your word must use a letter already on the board.");
-//        }
-
-//        String wordString = sb.toString();
 
         if (!isValidWord(wordString)) {
             throw new IllegalMoveException("Error: " + wordString + " is not a valid word, please try again:");
@@ -398,7 +335,7 @@ public class GameRunner {
         int y = move.coordinate().y();
         Square currentSquare;
         int i = 0;
-        var coordinatesVisited = new ArrayList<Coordinate>();
+        boolean usedStartSquare = false;
 
         String startWord = checkLeft(x, y);
         if (!startWord.isEmpty()) {
@@ -411,7 +348,7 @@ public class GameRunner {
             //This could be a method common to both horiz and vertical check methods??
             try {
                 currentSquare = board.getSquare(x, y);
-                coordinatesVisited.add(new Coordinate(x, y));
+                if (board.getStartSquare().equals(new Coordinate(x,y))) usedStartSquare = true;
             } catch (IndexOutOfBoundsException e) {
                 throw new IllegalMoveException("Error: not enough squares on the board!");
             }
@@ -439,10 +376,11 @@ public class GameRunner {
             sb.append(endWord);
         }
 
-        //Inefficient? We don't really need to keep a record of every square visited, we could just check as we go?
-        if (isFirstMove && !coordinatesVisited.contains(board.getStartSquare())) {
+        if (isFirstMove && !usedStartSquare) {
             throw new IllegalMoveException("Error: the first move must use the start square " + board.getStartSquare() + ".");
-        } else if (!isAdjacentMove) {
+        }
+
+        if (!isFirstMove && !isAdjacentMove) {
             throw new IllegalMoveException("Error: your word must use a letter already on the board.");
         }
 
@@ -452,12 +390,12 @@ public class GameRunner {
     private String validateVerticalMove(Move move) throws IllegalMoveException {
 
         boolean isAdjacentMove = false;
+        boolean usedStartSquare = false;
         var sb = new StringBuilder();
         int x = move.coordinate().x();
         int y = move.coordinate().y();
         Square currentSquare;
         int i = 0;
-        var coordinatesVisited = new ArrayList<Coordinate>();
 
         String startWord = checkAbove(x, y);
         if (!startWord.isEmpty()) {
@@ -467,10 +405,10 @@ public class GameRunner {
 
         while (i < move.word().size()) {
 
-            //This could be a method common to both horiz and vertical check methods??
+            //This could be a method common to both horizontal and vertical check methods?
             try {
                 currentSquare = board.getSquare(x, y);
-                coordinatesVisited.add(new Coordinate(x, y));
+                if (board.getStartSquare().equals(new Coordinate(x,y))) usedStartSquare = true;
             } catch (IndexOutOfBoundsException e) {
                 throw new IllegalMoveException("Error: not enough squares on the board!");
             }
@@ -498,10 +436,11 @@ public class GameRunner {
             sb.append(endWord);
         }
 
-        //Inefficient? We don't really need to keep a record of every square visited, we could just check as we go?
-        if (isFirstMove && !coordinatesVisited.contains(board.getStartSquare())) {
+        if (isFirstMove && !usedStartSquare) {
             throw new IllegalMoveException("Error: the first move must use the start square " + board.getStartSquare() + ".");
-        } else if (!isAdjacentMove) {
+        }
+
+        if (!isFirstMove && !isAdjacentMove) {
             throw new IllegalMoveException("Error: your word must use a letter already on the board.");
         }
 

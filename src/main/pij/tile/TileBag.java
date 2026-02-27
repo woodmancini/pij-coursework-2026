@@ -12,35 +12,26 @@ public class TileBag {
     private final List<Tile> contents = new ArrayList<>();
 
     public TileBag() {
-        // A-E
         addTiles(contents, 'A', 8);
         addTiles(contents, 'B', 2);
         addTiles(contents, 'C', 2);
         addTiles(contents, 'D', 4);
         addTiles(contents, 'E', 9);
-
-// F-J
         addTiles(contents, 'F', 3);
         addTiles(contents, 'G', 4);
         addTiles(contents, 'H', 3);
         addTiles(contents, 'I', 9);
         addTiles(contents, 'J', 1);
-
-// K-O
         addTiles(contents, 'K', 2);
         addTiles(contents, 'L', 4);
         addTiles(contents, 'M', 2);
         addTiles(contents, 'N', 7);
         addTiles(contents, 'O', 7);
-
-// P-T
         addTiles(contents, 'P', 2);
         addTiles(contents, 'Q', 1);
         addTiles(contents, 'R', 6);
         addTiles(contents, 'S', 4);
         addTiles(contents, 'T', 5);
-
-// U-Z
         addTiles(contents, 'U', 5);
         addTiles(contents, 'V', 2);
         addTiles(contents, 'W', 2);
@@ -48,7 +39,6 @@ public class TileBag {
         addTiles(contents, 'Y', 2);
         addTiles(contents, 'Z', 1);
         addTiles(contents, '_', 2);
-
     }
 
     public List<Tile> getContents() {

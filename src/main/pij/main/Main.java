@@ -12,7 +12,6 @@ public class Main {
         var gameRunner = new GameRunner();
         gameRunner.startGame();
         gameRunner.playGame();
-
     }
 
 }

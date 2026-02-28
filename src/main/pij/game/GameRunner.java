@@ -61,6 +61,12 @@ public class GameRunner {
                 printScores();
             }
         }
+        endGame();
+    }
+
+    private void endGame() {
+        //if tileBag is empty and player finishes their hand
+
     }
 
     public Move requestMove(Player player) {
@@ -140,14 +146,27 @@ public class GameRunner {
         }
 
         // What error does this throw? Can I catch it?
-        if (Character.isLetter(coordinate.charAt(0))) {
-            vertical = true;
-            x = Coordinate.charToInt(coordinate.charAt(0));
-            y = Integer.parseInt(coordinate.substring(1)) - 1;
-        } else if (Character.isLetter(coordinate.charAt(length - 1))) {
-            x = Coordinate.charToInt(coordinate.charAt(length - 1));
-            y = Integer.parseInt(coordinate.substring(0, length - 1)) - 1;
-        } else throw new IllegalMoveException(coordinate + "is not a valid square, please try again:");
+        try {
+            if (Character.isLetter(coordinate.charAt(0))) {
+                vertical = true;
+                x = Coordinate.charToInt(coordinate.charAt(0));
+                y = Integer.parseInt(coordinate.substring(1)) - 1;
+            } else if (Character.isLetter(coordinate.charAt(length - 1))) {
+                x = Coordinate.charToInt(coordinate.charAt(length - 1));
+                y = Integer.parseInt(coordinate.substring(0, length - 1)) - 1;
+            } else throw new IllegalMoveException(coordinate + " is not a valid square, please try again:");
+        } catch (NumberFormatException e) {
+            throw new IllegalMoveException(coordinate + " is not a valid square, please try again:");
+        }
+
+        try {
+            board.getSquare(x,y);
+        } catch (IndexOutOfBoundsException e) {
+            throw new IllegalMoveException(coordinate + " is not a valid square, please try again:");
+        }
+//        if (x >= board.getSizeX() || y >= board.getSizeY()) {
+//            throw new IllegalMoveException(coordinate + " is not a valid square, please try again:");
+//        }
 
         return new Move(wordInTiles, new Coordinate(x, y), vertical);
 
@@ -316,7 +335,7 @@ public class GameRunner {
         return false;
     }
 
-    public String validateMove(Move move) throws IllegalMoveException {
+    public String validateMoveOld(Move move) throws IllegalMoveException {
 
         String wordString = move.vertical() ? validateVerticalMove(move) : validateHorizontalMove(move);
 
@@ -326,6 +345,87 @@ public class GameRunner {
 
         return wordString;
 
+    }
+
+    public String validateMove(Move move) throws IllegalMoveException {
+
+        boolean usedStartSquare = false;
+        boolean isAdjacentMove = false;
+        var sb = new StringBuilder();
+        Square currentSquare;
+        int x = move.coordinate().x();
+        int y = move.coordinate().y();
+        int dx = move.vertical() ? 0 : 1;
+        int dy = move.vertical() ? 1 : 0;
+        int maxY = board.getSizeY() - 1;
+        int maxX = board.getSizeX() - 1;
+        int i = 0;
+
+        String startWord = move.vertical() ? checkAbove(x, y) : checkLeft(x, y);
+        if (!startWord.isEmpty()) {
+            isAdjacentMove = true;
+            sb.append(startWord);
+        }
+
+        while (i < move.word().size()) {
+
+            try {
+                currentSquare = board.getSquare(x, y);
+                if (isFirstMove && board.getStartSquare().equals(new Coordinate(x,y))) usedStartSquare = true;
+            } catch (IndexOutOfBoundsException e) {
+                throw new IllegalMoveException("Error: not enough squares on the board!");
+            }
+
+            if (currentSquare.getTile() != null) {
+                sb.append(currentSquare.getTile().getLetter());
+                isAdjacentMove = true;
+            } else {
+                //check for tiles perpendicular to word (not allowed)
+                //if dx is 1, we're moving horizontally
+                //if dy is 1, we're moving vertically
+                // edge cases: x is 0 or max, y is 0 or max
+                if (x == 0 || y == 0) {
+                    if (board.getSquare(x + dy, y + dx).getTile() != null) {
+                        throw new IllegalMoveException("Error: can't place parallel to an existing word.");
+                    }
+                } else if (x == maxX || y == maxY) {
+                    if (board.getSquare(x - dy, y - dx).getTile() != null) {
+                        throw new IllegalMoveException("Error: can't place parallel to an existing word.");
+                    }
+                } else if (board.getSquare(x + dy, y + dx).getTile() != null || board.getSquare(x - dy, y - dx).getTile() != null) {
+                    throw new IllegalMoveException("Error: can't place parallel to an existing word.");
+                }
+
+                sb.append(move.word().get(i).getLetter());
+                i++;
+            }
+
+            x += dx;
+            y += dy;
+
+        }
+
+        String endWord = move.vertical() ? checkBelow(x, y) : checkRight(x, y);
+        if (!endWord.isEmpty()) {
+            isAdjacentMove = true;
+            sb.append(endWord);
+        }
+
+        if (isFirstMove && !usedStartSquare) {
+            throw new IllegalMoveException("Error: the first move must use the start square " + board.getStartSquare() + ".");
+        }
+
+        if (!isFirstMove && !isAdjacentMove) {
+            throw new IllegalMoveException("Error: your word must use a letter already on the board.");
+        }
+
+        String wordString = sb.toString();
+
+        if (!isValidWord(wordString)) {
+            throw new IllegalMoveException("Error: " + wordString + " is not a valid word, please try again:");
+        }
+
+        return wordString;
     }
 
     private String validateHorizontalMove(Move move) throws IllegalMoveException {
@@ -358,10 +458,11 @@ public class GameRunner {
                 isAdjacentMove = true;
             } else {
                 //check if tiles perpendicular to word (not allowed)
-                if (board.getSquare(x, y + 1).getTile() != null
-                        || board.getSquare(x, y - 1).getTile() != null) {
+                if (((y < board.getSizeY() - 1) && board.getSquare(x, y + 1).getTile() != null)
+                        || (y > 0 && board.getSquare(x, y - 1).getTile() != null)) {
                     throw new IllegalMoveException("Error: can't place parallel to an existing word.");
                 }
+
                 sb.append(move.word().get(i).getLetter());
                 i++;
             }
@@ -459,7 +560,7 @@ public class GameRunner {
 
     private int addScoresRight(int x, int y) {
         int score = 0;
-        while (x >= 0 && board.getSquare(x, y).getTile() != null)  {
+        while (x < board.getSizeX() && board.getSquare(x, y).getTile() != null)  {
             score += board.getSquare(x, y).getTile().getTileMultiplier();
             x++;
         }
@@ -478,7 +579,7 @@ public class GameRunner {
 
     private int addScoresBelow(int x, int y) {
         int score = 0;
-        while (x >= 0 && board.getSquare(x, y).getTile() != null)  {
+        while (y < board.getSizeY() && board.getSquare(x, y).getTile() != null)  {
             score += board.getSquare(x, y).getTile().getTileMultiplier();
             y++;
         }

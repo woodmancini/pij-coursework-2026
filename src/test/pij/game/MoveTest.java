@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import pij.board.BoardParser;
 import pij.exceptions.IllegalMoveException;
 
+import java.io.File;
+
 public class MoveTest {
 
     private GameRunner runner;
@@ -21,6 +23,62 @@ public class MoveTest {
     void SetUp() {
         runner = new GameRunner();
         runner.setBoard(BoardParser.parseBoardFromFile());
+    }
+
+    @Test
+    void testHorizontalMoveTopRow() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_a1"));
+        assertDoesNotThrow(() -> playMove("HELLO","1a"));
+    }
+
+    @Test
+    void testVerticalMoveLeftColumn() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources" + File.separator + "testBoardStart_a1"));
+        assertDoesNotThrow(() -> playMove("HELLO","a1"));
+    }
+
+    @Test
+    void testVerticalMoveRightColumn() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_p14"));
+        assertDoesNotThrow(() -> playMove("HELLO","p10"));
+    }
+
+    @Test
+    void testHorizontalMoveBottomRow() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_p14"));
+        assertDoesNotThrow(() -> playMove("HELLO","14l"));
+    }
+
+    @Test
+    void test_HELLO_1a_Score() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_a1"));
+        int actual = playMove("HELLO","1a");
+        int expected = -54;
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void test_HELLO_a1_Score() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_a1"));
+        int actual = playMove("HELLO","a1");
+        int expected = 17;
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void test_HELLO_p10_Score() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_p14"));
+        int actual = playMove("HELLO","p10");
+        int expected = 176;
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void test_HELLO_14l_Score() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_p14"));
+        int actual = playMove("HELLO","14l");
+        int expected = 10;
+        assertEquals(expected, actual);
     }
 
     @Test

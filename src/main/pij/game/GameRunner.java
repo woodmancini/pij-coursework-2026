@@ -54,6 +54,7 @@ public class GameRunner {
                 Player1.updateScore(makeMove((P1Move)));
                 printScores();
             }
+             // But we want to check for empty hands here as well... while loop that checks for even/odd numbers?
 
             Move P2Move = requestMove(Player2);
             if (P2Move != null) {
@@ -65,8 +66,31 @@ public class GameRunner {
     }
 
     private void endGame() {
-        //if tileBag is empty and player finishes their hand
 
+        deductRemainingTiles(Player1);
+        deductRemainingTiles(Player2);
+        System.out.printf("""
+                Game over!
+                Player 1 scored %s points.
+                Player 2 scored %s points.%n
+                """, Player1.getScore(), Player2.getScore());
+        if (Player1.getScore() > Player2.getScore()) {
+            System.out.println("Player 1 wins!");
+        } if (Player1.getScore() == Player2.getScore()) {
+            System.out.println("It's a draw!");
+        } else {
+            System.out.println("Player 2 wins!");
+        }
+
+    }
+
+    private void deductRemainingTiles(Player player) {
+        if (!player.getHand().isEmpty()) return;
+        int deduction = 0;
+        for (Tile tile : player.getHand()) {
+            deduction += tile.getTileMultiplier();
+        }
+        player.updateScore(deduction * -1);
     }
 
     public Move requestMove(Player player) {
@@ -335,18 +359,6 @@ public class GameRunner {
         return false;
     }
 
-    public String validateMoveOld(Move move) throws IllegalMoveException {
-
-        String wordString = move.vertical() ? validateVerticalMove(move) : validateHorizontalMove(move);
-
-        if (!isValidWord(wordString)) {
-            throw new IllegalMoveException("Error: " + wordString + " is not a valid word, please try again:");
-        }
-
-        return wordString;
-
-    }
-
     public String validateMove(Move move) throws IllegalMoveException {
 
         boolean usedStartSquare = false;
@@ -355,8 +367,6 @@ public class GameRunner {
         Square currentSquare;
         int x = move.coordinate().x();
         int y = move.coordinate().y();
-        int dx = move.vertical() ? 0 : 1;
-        int dy = move.vertical() ? 1 : 0;
         int maxY = board.getSizeY() - 1;
         int maxX = board.getSizeX() - 1;
         int i = 0;
@@ -380,28 +390,42 @@ public class GameRunner {
                 sb.append(currentSquare.getTile().getLetter());
                 isAdjacentMove = true;
             } else {
-                //check for tiles perpendicular to word (not allowed)
-                //if dx is 1, we're moving horizontally
-                //if dy is 1, we're moving vertically
-                // edge cases: x is 0 or max, y is 0 or max
-                if (x == 0 || y == 0) {
-                    if (board.getSquare(x + dy, y + dx).getTile() != null) {
+                // Check for tiles perpendicular to word (not allowed)
+                // Could be its own method?
+                if (move.vertical()) {
+                    if (x == 0) {
+                        if (board.getSquare(x + 1, y).getTile() != null) {
+                            throw new IllegalMoveException("Error: can't place parallel to an existing word.");
+                        }
+                    } else if (x == maxX) {
+                        if (board.getSquare(x - 1, y).getTile() != null) {
+                            throw new IllegalMoveException("Error: can't place parallel to an existing word.");
+                        }
+                    } else if (board.getSquare(x + 1, y).getTile() != null
+                            || board.getSquare(x - 1, y).getTile() != null) {
                         throw new IllegalMoveException("Error: can't place parallel to an existing word.");
                     }
-                } else if (x == maxX || y == maxY) {
-                    if (board.getSquare(x - dy, y - dx).getTile() != null) {
+                } else {
+                    if (y == 0) {
+                        if (board.getSquare(x, y + 1).getTile() != null) {
+                            throw new IllegalMoveException("Error: can't place parallel to an existing word.");
+                        }
+                    } else if (y == maxY) {
+                        if (board.getSquare(x, y - 1).getTile() != null) {
+                            throw new IllegalMoveException("Error: can't place parallel to an existing word.");
+                        }
+                    } else if (board.getSquare(x, y + 1).getTile() != null
+                            || board.getSquare(x, y - 1).getTile() != null) {
                         throw new IllegalMoveException("Error: can't place parallel to an existing word.");
                     }
-                } else if (board.getSquare(x + dy, y + dx).getTile() != null || board.getSquare(x - dy, y - dx).getTile() != null) {
-                    throw new IllegalMoveException("Error: can't place parallel to an existing word.");
                 }
 
                 sb.append(move.word().get(i).getLetter());
                 i++;
             }
 
-            x += dx;
-            y += dy;
+            if (move.vertical()) y++;
+            else x++;
 
         }
 
@@ -426,126 +450,6 @@ public class GameRunner {
         }
 
         return wordString;
-    }
-
-    private String validateHorizontalMove(Move move) throws IllegalMoveException {
-        boolean isAdjacentMove = false;
-        var sb = new StringBuilder();
-        int x = move.coordinate().x();
-        int y = move.coordinate().y();
-        Square currentSquare;
-        int i = 0;
-        boolean usedStartSquare = false;
-
-        String startWord = checkLeft(x, y);
-        if (!startWord.isEmpty()) {
-            isAdjacentMove = true;
-            sb.append(startWord);
-        }
-
-        while (i < move.word().size()) {
-
-            //This could be a method common to both horiz and vertical check methods??
-            try {
-                currentSquare = board.getSquare(x, y);
-                if (board.getStartSquare().equals(new Coordinate(x,y))) usedStartSquare = true;
-            } catch (IndexOutOfBoundsException e) {
-                throw new IllegalMoveException("Error: not enough squares on the board!");
-            }
-
-            if (currentSquare.getTile() != null) {
-                sb.append(currentSquare.getTile().getLetter());
-                isAdjacentMove = true;
-            } else {
-                //check if tiles perpendicular to word (not allowed)
-                if (((y < board.getSizeY() - 1) && board.getSquare(x, y + 1).getTile() != null)
-                        || (y > 0 && board.getSquare(x, y - 1).getTile() != null)) {
-                    throw new IllegalMoveException("Error: can't place parallel to an existing word.");
-                }
-
-                sb.append(move.word().get(i).getLetter());
-                i++;
-            }
-
-            x++;
-
-        }
-
-        String endWord = checkRight(x, y);
-        if (!endWord.isEmpty()) {
-            isAdjacentMove = true;
-            sb.append(endWord);
-        }
-
-        if (isFirstMove && !usedStartSquare) {
-            throw new IllegalMoveException("Error: the first move must use the start square " + board.getStartSquare() + ".");
-        }
-
-        if (!isFirstMove && !isAdjacentMove) {
-            throw new IllegalMoveException("Error: your word must use a letter already on the board.");
-        }
-
-        return sb.toString();
-    }
-
-    private String validateVerticalMove(Move move) throws IllegalMoveException {
-
-        boolean isAdjacentMove = false;
-        boolean usedStartSquare = false;
-        var sb = new StringBuilder();
-        int x = move.coordinate().x();
-        int y = move.coordinate().y();
-        Square currentSquare;
-        int i = 0;
-
-        String startWord = checkAbove(x, y);
-        if (!startWord.isEmpty()) {
-            isAdjacentMove = true;
-            sb.append(startWord);
-        }
-
-        while (i < move.word().size()) {
-
-            //This could be a method common to both horizontal and vertical check methods?
-            try {
-                currentSquare = board.getSquare(x, y);
-                if (board.getStartSquare().equals(new Coordinate(x,y))) usedStartSquare = true;
-            } catch (IndexOutOfBoundsException e) {
-                throw new IllegalMoveException("Error: not enough squares on the board!");
-            }
-
-            if (currentSquare.getTile() != null) {
-                sb.append(currentSquare.getTile().getLetter());
-                isAdjacentMove = true;
-            } else {
-                //check if tiles perpendicular to word (not allowed)
-                if (board.getSquare(x - 1, y).getTile() != null
-                        || board.getSquare(x + 1, y).getTile() != null) {
-                    throw new IllegalMoveException("Error: can't place parallel to an existing word.");
-                }
-                sb.append(move.word().get(i).getLetter());
-                i++;
-            }
-
-            y++;
-
-        }
-
-        String endWord = checkBelow(x, y);
-        if (!endWord.isEmpty()) {
-            isAdjacentMove = true;
-            sb.append(endWord);
-        }
-
-        if (isFirstMove && !usedStartSquare) {
-            throw new IllegalMoveException("Error: the first move must use the start square " + board.getStartSquare() + ".");
-        }
-
-        if (!isFirstMove && !isAdjacentMove) {
-            throw new IllegalMoveException("Error: your word must use a letter already on the board.");
-        }
-
-        return sb.toString();
     }
 
     private int addScoresLeft(int x, int y) {

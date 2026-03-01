@@ -45,6 +45,11 @@ public class TileBag {
         return contents;
     }
 
+    // Only for testing
+    public void emptyBag() {
+        this.contents.clear();
+    }
+
     public int tilesRemaining() {
         return this.getContents().size();
     }

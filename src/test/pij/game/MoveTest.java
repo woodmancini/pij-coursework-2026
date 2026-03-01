@@ -50,6 +50,38 @@ public class MoveTest {
     }
 
     @Test
+    void testVerticalMoveBottomLeft() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_a14"));
+        assertDoesNotThrow(() -> playMove("HELLO","a10"));
+    }
+
+    @Test
+    void testHorizontalMoveBottomLeft() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_a14"));
+        assertDoesNotThrow(() -> playMove("HELLO","14a"));
+    }
+
+    @Test
+    void testVerticalMoveTopRight() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_p1"));
+        assertDoesNotThrow(() -> playMove("HELLO","p1"));
+    }
+
+    @Test
+    void testHorizontalMoveTopRight() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_p1"));
+        assertDoesNotThrow(() -> playMove("HELLO","1l"));
+    }
+
+    @Test
+    void test_HELLO_1l_Score() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_p1"));
+        int actual = playMove("HELLO","1l");
+        int expected = 2;
+        assertEquals(expected, actual);
+    }
+
+    @Test
     void test_HELLO_1a_Score() throws IllegalMoveException {
         runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_a1"));
         int actual = playMove("HELLO","1a");

@@ -12,33 +12,33 @@ public class TileBag {
     private final List<Tile> contents = new ArrayList<>();
 
     public TileBag() {
-        addTiles(contents, 'A', 8);
-        addTiles(contents, 'B', 2);
-        addTiles(contents, 'C', 2);
-        addTiles(contents, 'D', 4);
-        addTiles(contents, 'E', 9);
-        addTiles(contents, 'F', 3);
-        addTiles(contents, 'G', 4);
-        addTiles(contents, 'H', 3);
-        addTiles(contents, 'I', 9);
-        addTiles(contents, 'J', 1);
-        addTiles(contents, 'K', 2);
-        addTiles(contents, 'L', 4);
-        addTiles(contents, 'M', 2);
-        addTiles(contents, 'N', 7);
-        addTiles(contents, 'O', 7);
-        addTiles(contents, 'P', 2);
-        addTiles(contents, 'Q', 1);
-        addTiles(contents, 'R', 6);
-        addTiles(contents, 'S', 4);
-        addTiles(contents, 'T', 5);
-        addTiles(contents, 'U', 5);
-        addTiles(contents, 'V', 2);
-        addTiles(contents, 'W', 2);
-        addTiles(contents, 'X', 1);
-        addTiles(contents, 'Y', 2);
-        addTiles(contents, 'Z', 1);
-        addTiles(contents, '_', 2);
+        addTiles('A', 8);
+        addTiles('B', 2);
+        addTiles('C', 2);
+        addTiles('D', 4);
+        addTiles('E', 9);
+        addTiles('F', 3);
+        addTiles('G', 4);
+        addTiles('H', 3);
+        addTiles('I', 9);
+        addTiles('J', 1);
+        addTiles('K', 2);
+        addTiles('L', 4);
+        addTiles('M', 2);
+        addTiles('N', 7);
+        addTiles('O', 7);
+        addTiles('P', 2);
+        addTiles('Q', 1);
+        addTiles('R', 6);
+        addTiles('S', 4);
+        addTiles('T', 5);
+        addTiles('U', 5);
+        addTiles('V', 2);
+        addTiles('W', 2);
+        addTiles('X', 1);
+        addTiles('Y', 2);
+        addTiles('Z', 1);
+        addTiles('_', 2);
     }
 
     public List<Tile> getContents() {
@@ -54,15 +54,30 @@ public class TileBag {
         return this.getContents().size();
     }
 
-    private void addTiles(List<Tile> contents, char letter, int count) {
+    public void addTiles(char letter, int count) {
         for (int i = 0; i < count; i++) {
-            contents.add(new Tile(letter));
+            this.contents.add(new Tile(letter));
         }
+    }
+
+    public void deal(Player recipient, List<Tile> tiles) {
+        if (!contents.containsAll(tiles)) {
+            System.out.println("Not enough tiles in the bag.");
+            return;
+        }
+        if (tiles.size() > tilesRemaining()) {
+            System.out.println("Not enough tiles in the bag.");
+            return;
+        }
+        contents.removeAll(tiles);
+        recipient.drawTiles(tiles);
     }
 
     public void deal(Player recipient) {
 
-        int tilesToDeal =  TILES_PER_PLAYER - recipient.getHand().size();
+        if (tilesRemaining() == 0) return;
+
+        int tilesToDeal = TILES_PER_PLAYER - recipient.getHand().size();
         if (tilesToDeal == 0) return;
         List<Tile> returnList = new ArrayList<>();
         var random = new Random();

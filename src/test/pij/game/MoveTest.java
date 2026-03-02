@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import pij.board.BoardParser;
 import pij.exceptions.IllegalMoveException;
+import pij.tile.TestTileBag;
 
 import java.io.File;
 

@@ -6,6 +6,7 @@ import static pij.board.BoardParser.*;
 
 import pij.board.*;
 import pij.exceptions.IllegalMoveException;
+import pij.tile.TestTileBag;
 import pij.tile.Tile;
 import pij.tile.TileBag;
 
@@ -16,11 +17,12 @@ public class GameRunner {
 
     private Board board;
     private boolean openGame;
-    private Player Player1;
-    private Player Player2;
+    public Player Player1;
+    public Player Player2;
     private final Scanner scanner = new Scanner(System.in);
-    private TileBag tileBag = new TileBag();
+    public TileBag tileBag = new TestTileBag();
     private boolean isFirstMove = true;
+    private int turnCount = 0;
 
     public void firstMoveTaken() {
         this.isFirstMove = false;
@@ -47,25 +49,32 @@ public class GameRunner {
 
     }
 
+    /**
+     * Continues to request moves from alternate players until tilebag is empty and one player
+     */
     public void playGame() {
-        while (tileBag.tilesRemaining() > 0 && !Player1.getHand().isEmpty() || !Player2.getHand().isEmpty()) {
-            Move P1Move = requestMove(Player1);
-            if (P1Move != null) {
-                Player1.updateScore(makeMove((P1Move)));
-                printScores();
-            }
-             // But we want to check for empty hands here as well... while loop that checks for even/odd numbers?
+        int passCount = 0;
+        Player currentPlayer;
+        while (tileBag.tilesRemaining() > 0
+                && (!Player1.getHand().isEmpty() || !Player2.getHand().isEmpty())) {
 
-            Move P2Move = requestMove(Player2);
-            if (P2Move != null) {
-                Player2.updateScore(makeMove(P2Move));
-                printScores();
+            if (passCount >= 4) return;
+            currentPlayer = (turnCount % 2 == 0) ? Player1 : Player2;
+            Move move = requestMove(currentPlayer);
+
+            if (move == null) {
+                passCount++;
+                continue;
             }
+
+            currentPlayer.updateScore(makeMove((move)));
+            printScores();
+
+            turnCount++;
         }
-        endGame();
     }
 
-    private void endGame() {
+    public void endGame() {
 
         deductRemainingTiles(Player1);
         deductRemainingTiles(Player2);
@@ -344,6 +353,11 @@ public class GameRunner {
         return score * wordMultiplier;
     }
 
+    /**
+     * Checks if the given word is valid (ie included in wordlist.txt).
+     * @param word The word to be checked.
+     * @return Returns true if the given word is valid (ie included in the word list).
+     */
     private boolean isValidWord(String word) {
         File wordList = new File(System.getProperty("user.dir") + File.separator +
                 "resources" + File.separator + "wordlist.txt");
@@ -548,5 +562,17 @@ public class GameRunner {
 
     public void setBoard(Board board) {
         this.board = board;
+    }
+
+    public void setTileBag(TileBag tileBag) {
+        this.tileBag = tileBag;
+    }
+
+    public void setPlayer1(Player player) {
+        this.Player1 = player;
+    }
+
+    public void setPlayer2(Player player) {
+        this.Player2 = player;
     }
 }

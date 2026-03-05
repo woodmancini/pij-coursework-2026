@@ -14,14 +14,17 @@ import java.util.*;
 
 public class GameRunner {
 
-    public static final int TILES_PER_PLAYER = 7;
     private Board board;
     private boolean openGame;
     private Player Player1;
     private Player Player2;
     private final Scanner scanner = new Scanner(System.in);
-    private TileBag tileBag = new TileBag();
+    private final TileBag tileBag = new TileBag();
     private boolean isFirstMove = true;
+
+    public void setBoard(Board board) {
+        this.board = board;
+    }
 
     public void firstMoveTaken() {
         this.isFirstMove = false;
@@ -130,7 +133,7 @@ public class GameRunner {
         }
     }
 
-    private Move buildMove(char[] wordInChar, String coordinate) throws IllegalMoveException {
+    public Move buildMove(char[] wordInChar, String coordinate) throws IllegalMoveException {
 
         List<Tile> wordInTiles = new ArrayList<>();
         boolean vertical = false;

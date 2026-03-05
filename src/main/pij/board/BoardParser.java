@@ -21,13 +21,21 @@ public class BoardParser {
         List<List<Square>> result = new ArrayList<>();
         List<String> lines = List.of();
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(boardFile))) {
-            lines = new ArrayList<>(reader.readAllLines());
+        try {
+            lines = Files.readAllLines(boardFile.toPath());
         } catch (IOException e) {
             System.out.println("Error reading file: " + e.getMessage());
         }
 
+        // Only works on Java 25...
+//        try (BufferedReader reader = new BufferedReader(new FileReader(boardFile))) {
+//            lines = new ArrayList<>(reader.readAllLines());
+//        } catch (IOException e) {
+//            System.out.println("Error reading file: " + e.getMessage());
+//        }
+
         // Parse first line
+        // Should check if null?
         String firstLine = lines.removeFirst().strip();
         int columns = Integer.parseInt(firstLine);
         if ((columns < MIN_COLUMNS) || (columns > MAX_COLUMNS)) {

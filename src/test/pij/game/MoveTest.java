@@ -1,80 +1,181 @@
 package pij.game;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-import pij.board.Board;
 import pij.board.BoardParser;
-import pij.board.Coordinate;
 import pij.exceptions.IllegalMoveException;
-import pij.tile.Tile;
+import pij.tile.TestTileBag;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import java.io.File;
 
 public class MoveTest {
 
-    private GameRunner gameRunner;
+    private GameRunner runner;
+
+    int playMove(String word, String position) throws IllegalMoveException {
+        Move move = runner.buildMove(word.toCharArray(), position);
+        runner.validateMove(move);
+        return runner.makeMove(move);
+    }
 
     @BeforeEach
     void SetUp() {
-        gameRunner = new GameRunner();
-        gameRunner.setBoard(BoardParser.parseBoardFromFile());
+        runner = new GameRunner();
+        runner.setBoard(BoardParser.parseBoardFromFile());
     }
 
     @Test
-    void testMustUseStartSquare() {
-        assertThrows(IllegalMoveException.class, () -> gameRunner.validateMove(new Move(List.of(new Tile('D'), new Tile('I'), new Tile('N'), new Tile('E'), new Tile('D')),
-                new Coordinate(3, 7), true)));
+    void testHorizontalMoveTopRow() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_a1"));
+        assertDoesNotThrow(() -> playMove("HELLO","1a"));
     }
 
     @Test
-    void test_DINED_d4_Scores20() {
-        int actual = gameRunner.makeMove(new Move(List.of(new Tile('D'), new Tile('I'), new Tile('N'), new Tile('E'), new Tile('D')),
-                new Coordinate(3, 3), true));
+    void testVerticalMoveLeftColumn() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources" + File.separator + "testBoardStart_a1"));
+        assertDoesNotThrow(() -> playMove("HELLO","a1"));
+    }
+
+    @Test
+    void testVerticalMoveRightColumn() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_p14"));
+        assertDoesNotThrow(() -> playMove("HELLO","p10"));
+    }
+
+    @Test
+    void testHorizontalMoveBottomRow() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_p14"));
+        assertDoesNotThrow(() -> playMove("HELLO","14l"));
+    }
+
+    @Test
+    void testVerticalMoveBottomLeft() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_a14"));
+        assertDoesNotThrow(() -> playMove("HELLO","a10"));
+    }
+
+    @Test
+    void testHorizontalMoveBottomLeft() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_a14"));
+        assertDoesNotThrow(() -> playMove("HELLO","14a"));
+    }
+
+    @Test
+    void testVerticalMoveTopRight() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_p1"));
+        assertDoesNotThrow(() -> playMove("HELLO","p1"));
+    }
+
+    @Test
+    void testHorizontalMoveTopRight() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_p1"));
+        assertDoesNotThrow(() -> playMove("HELLO","1l"));
+    }
+
+    @Test
+    void test_HELLO_1l_Score() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_p1"));
+        int actual = playMove("HELLO","1l");
+        int expected = 2;
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void test_HELLO_1a_Score() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_a1"));
+        int actual = playMove("HELLO","1a");
+        int expected = -54;
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void test_HELLO_a1_Score() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_a1"));
+        int actual = playMove("HELLO","a1");
+        int expected = 17;
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void test_HELLO_p10_Score() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_p14"));
+        int actual = playMove("HELLO","p10");
+        int expected = 176;
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void test_HELLO_14l_Score() throws IllegalMoveException {
+        runner.setBoard(BoardParser.parseBoardFromFile("testresources/testBoardStart_p14"));
+        int actual = playMove("HELLO","14l");
+        int expected = 10;
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void testMustUseStartSquare() throws IllegalMoveException {
+        Move move = runner.buildMove("DINED".toCharArray(), "e4");
+        assertThrows(IllegalMoveException.class, () -> runner.validateMove(move));
+    }
+
+    @Test
+    void test_DINED_d4_Scores20() throws IllegalMoveException {
+        int actual = playMove("DINED","d4");
         int expected = 20;
         assertEquals(expected, actual);
     }
 
     @Test
-    void testOutOfBoundsMove() {
-
-        assertThrows(IllegalMoveException.class, () -> gameRunner.validateMove(new Move(List.of(new Tile('D'), new Tile('I'), new Tile('N'), new Tile('E'), new Tile('D')),
-                new Coordinate(3, 7), true)));
-
+    void testOutOfBoundsMove() throws IllegalMoveException {
+        Move move = runner.buildMove("AARDVARKS".toCharArray(), "d7");
+        assertThrows(IllegalMoveException.class, () -> runner.validateMove(move));
     }
 
     @Test
     void test_TNZON_7c_Scores19() throws IllegalMoveException {
-        char[] dined = "DINED".toCharArray();
-        gameRunner.makeMove(gameRunner.buildMove(dined, "d4"));
-        char[] tenzon = "TNZON".toCharArray();
-        int actual = gameRunner.makeMove(gameRunner.buildMove(tenzon, "7c"));
+        playMove("DINED","d4");
+        int actual = playMove("TNZON","7c");
         int expected = 19;
         assertEquals(expected, actual);
     }
 
-    //new Move(List.of(new Tile('D'), new Tile('I'), new Tile('N'), new Tile('E'), new Tile('D')
+    @Test
+    void test_DOVE_4e_Scores9() throws IllegalMoveException {
+        playMove("DINED","d4");
+        playMove("TNZON","7c");
+        int actual = playMove("OVE","4e");
+        int expected = 9;
+        assertEquals(expected, actual);
+    }
 
+    @Test
+    void test_PERSON_Scores15() throws IllegalMoveException {
+        playMove("DINED","d4");
+        playMove("TNZON","7c");
+        playMove("OVE","4e");
+        int actual = playMove("PRSN","g3");
+        int expected = 15;
+        assertEquals(expected, actual);
+    }
 
-//
-//    @Test
-//    void testStringToMoveValidVertical() {
-//        var gameRunner = new GameRunner();
-//        Move actual = gameRunner.stringToMove("DINED,d4");
-//        Move expected = new Move(List.of(Tile.D, Tile.I, Tile.N, Tile.E, Tile.D), new Coordinate(3, 3), true);
-//        assertEquals(expected, actual);
-//    }
-//
-//    @Test
-//    void testStringToMoveValidHorizontal() {
-//        var gameRunner = new GameRunner();
-//        Move actual = gameRunner.stringToMove("DINED,4d");
-//        Move expected = new Move(List.of(Tile.D, Tile.I, Tile.N, Tile.E, Tile.D), new Coordinate(3, 3), false);
-//        assertEquals(expected, actual);
-//    }
+    @Test
+    void testParallelMoveIllegal() throws IllegalMoveException {
+        playMove("DINED","d4");
+        playMove("TNZON","7c");
+        playMove("OVE","4e");
+        playMove("PRSN","g3");
+        Move illegalMove = runner.buildMove("BRKE".toCharArray(), "e2");
+        assertThrows(IllegalMoveException.class, () -> runner.validateMove(illegalMove));
+    }
+
+    @Test
+    void test_DINE_to_DINED() throws IllegalMoveException {
+        playMove("DINE","d4");
+        int actual = playMove("D","d8");
+        int expected = 10;
+        assertEquals(expected, actual);
+    }
 
 }

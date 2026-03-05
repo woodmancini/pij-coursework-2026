@@ -4,6 +4,8 @@ import pij.exceptions.BoardParseException;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,25 +19,17 @@ public class BoardParser {
     //Should there be a version that takes in an absolute filepath?
     public static Board parseBoardFromFile(String filePath) {
 
-        File boardFile = new File(System.getProperty("user.dir") + File.separator + filePath);
+        Path boardPath = Paths.get(System.getProperty("user.dir"), filePath);
         List<List<Square>> result = new ArrayList<>();
         List<String> lines = List.of();
 
         try {
-            lines = Files.readAllLines(boardFile.toPath());
+            lines = new ArrayList<>(Files.readAllLines(boardPath));
         } catch (IOException e) {
             System.out.println("Error reading file: " + e.getMessage());
         }
 
-        // Only works on Java 25...
-//        try (BufferedReader reader = new BufferedReader(new FileReader(boardFile))) {
-//            lines = new ArrayList<>(reader.readAllLines());
-//        } catch (IOException e) {
-//            System.out.println("Error reading file: " + e.getMessage());
-//        }
-
         // Parse first line
-        // Should check if null?
         String firstLine = lines.removeFirst().strip();
         int columns = Integer.parseInt(firstLine);
         if ((columns < MIN_COLUMNS) || (columns > MAX_COLUMNS)) {

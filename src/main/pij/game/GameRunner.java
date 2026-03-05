@@ -6,6 +6,7 @@ import static pij.board.BoardParser.*;
 
 import pij.board.*;
 import pij.exceptions.IllegalMoveException;
+import pij.tile.TestTileBag;
 import pij.tile.Tile;
 import pij.tile.TileBag;
 
@@ -16,15 +17,12 @@ public class GameRunner {
 
     private Board board;
     private boolean openGame;
-    private Player Player1;
-    private Player Player2;
+    public Player Player1;
+    public Player Player2;
     private final Scanner scanner = new Scanner(System.in);
-    private final TileBag tileBag = new TileBag();
+    public TileBag tileBag = new TestTileBag();
     private boolean isFirstMove = true;
-
-    public void setBoard(Board board) {
-        this.board = board;
-    }
+    private int turnCount = 0;
 
     public void firstMoveTaken() {
         this.isFirstMove = false;
@@ -51,20 +49,57 @@ public class GameRunner {
 
     }
 
+    /**
+     * Continues to request moves from alternate players until tilebag is empty and one player
+     */
     public void playGame() {
-        while (tileBag.tilesRemaining() > 0 && !Player1.getHand().isEmpty() || !Player2.getHand().isEmpty()) {
-            Move P1Move = requestMove(Player1);
-            if (P1Move != null) {
-                Player1.updateScore(makeMove((P1Move)));
-                printScores();
+        int passCount = 0;
+        Player currentPlayer;
+        while (tileBag.tilesRemaining() > 0
+                && (!Player1.getHand().isEmpty() || !Player2.getHand().isEmpty())) {
+
+            if (passCount >= 4) return;
+            currentPlayer = (turnCount % 2 == 0) ? Player1 : Player2;
+            Move move = requestMove(currentPlayer);
+
+            if (move == null) {
+                passCount++;
+                continue;
             }
 
-            Move P2Move = requestMove(Player2);
-            if (P2Move != null) {
-                Player2.updateScore(makeMove(P2Move));
-                printScores();
-            }
+            currentPlayer.updateScore(makeMove((move)));
+            printScores();
+
+            turnCount++;
         }
+    }
+
+    public void endGame() {
+
+        deductRemainingTiles(Player1);
+        deductRemainingTiles(Player2);
+        System.out.printf("""
+                Game over!
+                Player 1 scored %s points.
+                Player 2 scored %s points.%n
+                """, Player1.getScore(), Player2.getScore());
+        if (Player1.getScore() > Player2.getScore()) {
+            System.out.println("Player 1 wins!");
+        } if (Player1.getScore() == Player2.getScore()) {
+            System.out.println("It's a draw!");
+        } else {
+            System.out.println("Player 2 wins!");
+        }
+
+    }
+
+    private void deductRemainingTiles(Player player) {
+        if (!player.getHand().isEmpty()) return;
+        int deduction = 0;
+        for (Tile tile : player.getHand()) {
+            deduction += tile.getTileMultiplier();
+        }
+        player.updateScore(deduction * -1);
     }
 
     public Move requestMove(Player player) {
@@ -144,14 +179,27 @@ public class GameRunner {
         }
 
         // What error does this throw? Can I catch it?
-        if (Character.isLetter(coordinate.charAt(0))) {
-            vertical = true;
-            x = Coordinate.charToInt(coordinate.charAt(0));
-            y = Integer.parseInt(coordinate.substring(1)) - 1;
-        } else if (Character.isLetter(coordinate.charAt(length - 1))) {
-            x = Coordinate.charToInt(coordinate.charAt(length - 1));
-            y = Integer.parseInt(coordinate.substring(0, length - 1)) - 1;
-        } else throw new IllegalMoveException(coordinate + "is not a valid square, please try again:");
+        try {
+            if (Character.isLetter(coordinate.charAt(0))) {
+                vertical = true;
+                x = Coordinate.charToInt(coordinate.charAt(0));
+                y = Integer.parseInt(coordinate.substring(1)) - 1;
+            } else if (Character.isLetter(coordinate.charAt(length - 1))) {
+                x = Coordinate.charToInt(coordinate.charAt(length - 1));
+                y = Integer.parseInt(coordinate.substring(0, length - 1)) - 1;
+            } else throw new IllegalMoveException(coordinate + " is not a valid square, please try again:");
+        } catch (NumberFormatException e) {
+            throw new IllegalMoveException(coordinate + " is not a valid square, please try again:");
+        }
+
+        try {
+            board.getSquare(x,y);
+        } catch (IndexOutOfBoundsException e) {
+            throw new IllegalMoveException(coordinate + " is not a valid square, please try again:");
+        }
+//        if (x >= board.getSizeX() || y >= board.getSizeY()) {
+//            throw new IllegalMoveException(coordinate + " is not a valid square, please try again:");
+//        }
 
         return new Move(wordInTiles, new Coordinate(x, y), vertical);
 
@@ -261,6 +309,7 @@ public class GameRunner {
     }
 
     // Place tiles on the board and return score
+    // Maybe should be in the player class?
     public int makeMove(Move move) {
         if (isFirstMove) firstMoveTaken();
         int score = 0;
@@ -269,8 +318,10 @@ public class GameRunner {
         int y = move.coordinate().y();
         int i = 0;
 
-        // Add scores of tiles to the left/above
+        if (move.vertical()) score += addScoresAbove(x, y);
+        else score += addScoresLeft(x, y);
 
+        // Place tiles on the board and add up scores
         while (i < move.word().size()) {
             var square = board.getSquare(x, y);
             if (square.getTile() != null) {
@@ -294,11 +345,19 @@ public class GameRunner {
             if (!move.vertical()) x++;
             else y++;
         }
-        // Add scores of tiles to the right
+
+        // Add scores of existing tiles to the right/below
+        if (move.vertical()) score += addScoresBelow(x, y);
+        else score += addScoresRight(x, y);
 
         return score * wordMultiplier;
     }
 
+    /**
+     * Checks if the given word is valid (ie included in wordlist.txt).
+     * @param word The word to be checked.
+     * @return Returns true if the given word is valid (ie included in the word list).
+     */
     private boolean isValidWord(String word) {
         File wordList = new File(System.getProperty("user.dir") + File.separator +
                 "resources" + File.separator + "wordlist.txt");
@@ -315,63 +374,134 @@ public class GameRunner {
     }
 
     public String validateMove(Move move) throws IllegalMoveException {
-        //go through squares, appending letters to a StringBuilder, until we run out of square or tiles in move
+
+        boolean usedStartSquare = false;
+        boolean isAdjacentMove = false;
         var sb = new StringBuilder();
+        Square currentSquare;
         int x = move.coordinate().x();
         int y = move.coordinate().y();
-        Square currentSquare;
+        int maxY = board.getSizeY() - 1;
+        int maxX = board.getSizeX() - 1;
         int i = 0;
-        var coordinatesVisited = new ArrayList<Coordinate>();
 
-        //Currently doesn't add score, need to update makeMove()
-        if (move.vertical()) sb.append(checkAbove(x, y));
-        else sb.append(checkLeft(x,y));
+        String startWord = move.vertical() ? checkAbove(x, y) : checkLeft(x, y);
+        if (!startWord.isEmpty()) {
+            isAdjacentMove = true;
+            sb.append(startWord);
+        }
 
         while (i < move.word().size()) {
 
             try {
                 currentSquare = board.getSquare(x, y);
-                coordinatesVisited.add(new Coordinate(x, y));
+                if (isFirstMove && board.getStartSquare().equals(new Coordinate(x,y))) usedStartSquare = true;
             } catch (IndexOutOfBoundsException e) {
                 throw new IllegalMoveException("Error: not enough squares on the board!");
             }
 
             if (currentSquare.getTile() != null) {
                 sb.append(currentSquare.getTile().getLetter());
-                //add the tile on the board to the word
+                isAdjacentMove = true;
             } else {
+                // Check for tiles perpendicular to word (not allowed)
+                // Could be its own method?
+                if (move.vertical()) {
+                    if (x == 0) {
+                        if (board.getSquare(x + 1, y).getTile() != null) {
+                            throw new IllegalMoveException("Error: can't place parallel to an existing word.");
+                        }
+                    } else if (x == maxX) {
+                        if (board.getSquare(x - 1, y).getTile() != null) {
+                            throw new IllegalMoveException("Error: can't place parallel to an existing word.");
+                        }
+                    } else if (board.getSquare(x + 1, y).getTile() != null
+                            || board.getSquare(x - 1, y).getTile() != null) {
+                        throw new IllegalMoveException("Error: can't place parallel to an existing word.");
+                    }
+                } else {
+                    if (y == 0) {
+                        if (board.getSquare(x, y + 1).getTile() != null) {
+                            throw new IllegalMoveException("Error: can't place parallel to an existing word.");
+                        }
+                    } else if (y == maxY) {
+                        if (board.getSquare(x, y - 1).getTile() != null) {
+                            throw new IllegalMoveException("Error: can't place parallel to an existing word.");
+                        }
+                    } else if (board.getSquare(x, y + 1).getTile() != null
+                            || board.getSquare(x, y - 1).getTile() != null) {
+                        throw new IllegalMoveException("Error: can't place parallel to an existing word.");
+                    }
+                }
+
                 sb.append(move.word().get(i).getLetter());
                 i++;
             }
 
-            if (!move.vertical()) x++;
-            else y++;
+            if (move.vertical()) y++;
+            else x++;
 
         }
 
-        //Need to replace this with checkRight() and checkBelow()
-        // Check if there's a tile on the board at the end of the word
-        if (move.vertical() && y < board.getSizeY()) {
-            if (board.getSquare(x, y).getTile() != null) {
-                sb.append(board.getSquare(x, y).getTile().getLetter());
-            }
-        } else if (x < board.getSizeX()) {
-            if (board.getSquare(x, y).getTile() != null) {
-                sb.append(board.getSquare(x, y).getTile().getLetter());
-            }
+        String endWord = move.vertical() ? checkBelow(x, y) : checkRight(x, y);
+        if (!endWord.isEmpty()) {
+            isAdjacentMove = true;
+            sb.append(endWord);
         }
 
-        if (isFirstMove && !coordinatesVisited.contains(board.getStartSquare())) {
+        if (isFirstMove && !usedStartSquare) {
             throw new IllegalMoveException("Error: the first move must use the start square " + board.getStartSquare() + ".");
         }
 
+        if (!isFirstMove && !isAdjacentMove) {
+            throw new IllegalMoveException("Error: your word must use a letter already on the board.");
+        }
+
         String wordString = sb.toString();
+
         if (!isValidWord(wordString)) {
-            throw new IllegalMoveException("Error: that's not a valid word, please try again:");
+            throw new IllegalMoveException("Error: " + wordString + " is not a valid word, please try again:");
         }
 
         return wordString;
+    }
 
+    private int addScoresLeft(int x, int y) {
+        x = x - 1;
+        int score = 0;
+        while (x >= 0 && board.getSquare(x, y).getTile() != null)  {
+            score += board.getSquare(x, y).getTile().getTileMultiplier();
+            x--;
+        }
+        return score;
+    }
+
+    private int addScoresRight(int x, int y) {
+        int score = 0;
+        while (x < board.getSizeX() && board.getSquare(x, y).getTile() != null)  {
+            score += board.getSquare(x, y).getTile().getTileMultiplier();
+            x++;
+        }
+        return score;
+    }
+
+    private int addScoresAbove(int x, int y) {
+        y = y - 1;
+        int score = 0;
+        while (y >= 0 && board.getSquare(x, y).getTile() != null)  {
+            score += board.getSquare(x, y).getTile().getTileMultiplier();
+            y--;
+        }
+        return score;
+    }
+
+    private int addScoresBelow(int x, int y) {
+        int score = 0;
+        while (y < board.getSizeY() && board.getSquare(x, y).getTile() != null)  {
+            score += board.getSquare(x, y).getTile().getTileMultiplier();
+            y++;
+        }
+        return score;
     }
 
     /**
@@ -394,7 +524,6 @@ public class GameRunner {
      * @return A String containing letter(s) to the right of start square.
      */
     private String checkRight(int x, int y) {
-        x = x + 1;
         var result = new StringBuilder();
         while (x < board.getSizeX() && board.getSquare(x, y).getTile() != null)  {
             result.append(board.getSquare(x, y).getTile().getLetter());
@@ -410,7 +539,6 @@ public class GameRunner {
      * @return A String containing letter(s) below start square.
      */
     private String checkBelow(int x, int y) {
-        y = + 1;
         var result = new StringBuilder();
         while (y < board.getSizeY() && board.getSquare(x, y).getTile() != null)  {
             result.append(board.getSquare(x, y).getTile().getLetter());
@@ -430,5 +558,21 @@ public class GameRunner {
             y--;
         }
         return result.reverse().toString();
+    }
+
+    public void setBoard(Board board) {
+        this.board = board;
+    }
+
+    public void setTileBag(TileBag tileBag) {
+        this.tileBag = tileBag;
+    }
+
+    public void setPlayer1(Player player) {
+        this.Player1 = player;
+    }
+
+    public void setPlayer2(Player player) {
+        this.Player2 = player;
     }
 }

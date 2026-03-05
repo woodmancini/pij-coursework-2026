@@ -69,7 +69,9 @@ public class TileBag {
             System.out.println("Not enough tiles in the bag.");
             return;
         }
-        contents.removeAll(tiles);
+        for (Tile tile : tiles) {
+            contents.remove(tile);
+        }
         recipient.drawTiles(tiles);
     }
 

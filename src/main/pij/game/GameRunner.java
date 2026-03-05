@@ -55,8 +55,7 @@ public class GameRunner {
     public void playGame() {
         int passCount = 0;
         Player currentPlayer;
-        while (tileBag.tilesRemaining() > 0
-                && (!Player1.getHand().isEmpty() || !Player2.getHand().isEmpty())) {
+        while (!tileBag.getContents().isEmpty() && !Player1.getHand().isEmpty() && !Player2.getHand().isEmpty()) {
 
             if (passCount >= 4) return;
             currentPlayer = (turnCount % 2 == 0) ? Player1 : Player2;
@@ -74,7 +73,7 @@ public class GameRunner {
         }
     }
 
-    public void endGame() {
+    public int endGame() {
 
         deductRemainingTiles(Player1);
         deductRemainingTiles(Player2);
@@ -85,10 +84,13 @@ public class GameRunner {
                 """, Player1.getScore(), Player2.getScore());
         if (Player1.getScore() > Player2.getScore()) {
             System.out.println("Player 1 wins!");
-        } if (Player1.getScore() == Player2.getScore()) {
+            return 1;
+        } else if (Player1.getScore() == Player2.getScore()) {
             System.out.println("It's a draw!");
+            return 0;
         } else {
             System.out.println("Player 2 wins!");
+            return 2;
         }
 
     }

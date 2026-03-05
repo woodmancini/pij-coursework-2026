@@ -1,5 +1,7 @@
 package pij.game;
 
+import pij.board.LetterPremiumSquare;
+import pij.board.WordPremiumSquare;
 import pij.tile.Tile;
 
 import java.util.ArrayList;
@@ -39,7 +41,15 @@ public abstract sealed class Player permits HumanPlayer, CPU {
         return sj.toString();
     }
 
+    public boolean equals(Object other) {
+        if (other instanceof Player otherPlayer) {
+            return otherPlayer.getName().equals(name);
+        }
+        return false;
+    }
+
     public void updateScore(int i) {
         this.score += i;
     }
+
 }

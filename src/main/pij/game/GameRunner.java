@@ -13,25 +13,47 @@ import pij.tile.TileBag;
 import java.io.*;
 import java.util.*;
 
+/**
+ * Runner class that manages the states of a game of ScraeBBKle, requests command line input from players,
+ */
 public class GameRunner {
 
     private Board board;
-    private boolean openGame;
-    public Player Player1;
-    public Player Player2;
+    private boolean openGame = true;
+    private Player Player1;
+    private Player Player2;
     private final Scanner scanner = new Scanner(System.in);
-    public TileBag tileBag = new TestTileBag();
-    private boolean isFirstMove = true;
+    private TileBag tileBag = new TileBag();
     private int turnCount = 0;
 
-    public void firstMoveTaken() {
-        this.isFirstMove = false;
+    public Player getPlayer1() {
+        return Player1;
     }
-
+    public Player getPlayer2() {
+        return Player2;
+    }
     public Board getBoard() {
         return board;
     }
+    public TileBag getTileBag() {
+        return tileBag;
+    }
+    public void setBoard(Board board) {
+        this.board = board;
+    }
+    public void setTileBag(TileBag tileBag) {
+        this.tileBag = tileBag;
+    }
+    public void setPlayer1(Player player) {
+        this.Player1 = player;
+    }
+    public void setPlayer2(Player player) {
+        this.Player2 = player;
+    }
 
+    /**
+     * Asks for user input in order to initialise the board, players, and check whether to play open or closed game.
+     */
     public void startGame() {
 
         System.out.println("""
@@ -50,13 +72,14 @@ public class GameRunner {
     }
 
     /**
-     * Continues to request moves from alternate players until tilebag is empty and one player
+     * Continues to request moves from alternate players until tile bag is empty and one player has played all remaining tiles.
      */
     public void playGame() {
         int passCount = 0;
         Player currentPlayer;
         while (!tileBag.getContents().isEmpty() && !Player1.getHand().isEmpty() && !Player2.getHand().isEmpty()) {
 
+            //Should deal happen here?
             if (passCount >= 4) return;
             currentPlayer = (turnCount % 2 == 0) ? Player1 : Player2;
             Move move = requestMove(currentPlayer);
@@ -66,17 +89,22 @@ public class GameRunner {
                 continue;
             }
 
-            currentPlayer.updateScore(makeMove((move)));
+            currentPlayer.makeMove((move));
             printScores();
 
+            tileBag.deal(currentPlayer);
             turnCount++;
         }
     }
 
+    /**
+     * Deducts remaining tiles from player's hand; calculates winner and prints to console.
+     * @return int 0 in case of draw, 1 for Player1 victory, 2 for Player2 victory. For testing reasons.
+     */
     public int endGame() {
 
-        deductRemainingTiles(Player1);
-        deductRemainingTiles(Player2);
+        Player1.deductRemainingTiles();
+        Player2.deductRemainingTiles();
         System.out.printf("""
                 Game over!
                 Player 1 scored %s points.
@@ -95,15 +123,11 @@ public class GameRunner {
 
     }
 
-    private void deductRemainingTiles(Player player) {
-        if (!player.getHand().isEmpty()) return;
-        int deduction = 0;
-        for (Tile tile : player.getHand()) {
-            deduction += tile.getTileMultiplier();
-        }
-        player.updateScore(deduction * -1);
-    }
-
+    /**
+     * Continually requests move input from the given player; parses and validates the move before returning it.
+     * @param player The player whose move is being requested.
+     * @return The Move object representing the player's (already validated) move.
+     */
     public Move requestMove(Player player) {
 
         Player otherPlayer = player.getName().equals("Player 1") ? Player2 : Player1;
@@ -115,7 +139,7 @@ public class GameRunner {
             System.out.printf("""
                     OPEN GAME: %s's tiles:
                     OPEN GAME: %s
-                    """, otherPlayer.getName(), otherPlayer.printHand());
+                    """, otherPlayer.getName(), otherPlayer.handToString());
         }
 
         System.out.printf("""
@@ -127,7 +151,7 @@ public class GameRunner {
                 In the word, upper-case letters are standard tiles and lower-case letters
                 are wildcards.
                 Entering "," passes the turn.
-                """, player.getName(), player.printHand());
+                """, player.getName(), player.handToString());
 
         while (true) {
 
@@ -148,7 +172,7 @@ public class GameRunner {
                 char[] wordInChar = inputStrings[0].toCharArray();
                 String coordinate = inputStrings[1];
 
-                checkPlayerHasTiles(wordInChar, player);
+                player.checkHasTiles(wordInChar);
 
                 move = buildMove(wordInChar, coordinate);
 
@@ -159,17 +183,20 @@ public class GameRunner {
                 continue;
             }
 
-            for (Tile tile : move.word()) {
-                player.getHand().remove(tile);
-            }
-            tileBag.deal(player);
-
             System.out.printf("The move is... word: %s at position %s.%n", finalWord, move.coordinate());
+
             return move;
 
         }
     }
 
+    /**
+     * Takes in a char[] and String coordinate and returns a new Move object.
+     * @param wordInChar char[] representing the word to be played.
+     * @param coordinate String in the format d7 or 7d representing the coordinate of start square of the move.
+     * @return Move object representing the move.
+     * @throws IllegalMoveException for an invalid move (ie coordinate not parsable, index out of bounds for current board).
+     */
     public Move buildMove(char[] wordInChar, String coordinate) throws IllegalMoveException {
 
         List<Tile> wordInTiles = new ArrayList<>();
@@ -207,6 +234,9 @@ public class GameRunner {
 
     }
 
+    /**
+     * Prints both player's current scores to console.
+     */
     private void printScores() {
         System.out.printf("""
                 Player 1 score: %s
@@ -215,6 +245,12 @@ public class GameRunner {
                 """, Player1.getScore(), Player2.getScore());
     }
 
+    /**
+     * Checks player move input is formatted correctly (eg "WORD,d7") and returns an array of two strings split by the comma.
+     * @param input Player input as String to be parsed.
+     * @return A String[] with two elements: [0] the word to be played and [1] the coordinate to play at.
+     * @throws IllegalMoveException in the case of incorrect input format.
+     */
     private String[] validateMoveInput(String input) throws IllegalMoveException {
 
         if (!input.contains(",")) {
@@ -231,29 +267,10 @@ public class GameRunner {
         return inputStrings;
     }
 
-    private void checkPlayerHasTiles(char[] wordInChar, Player player) throws IllegalMoveException {
-
-        Map<Character, Integer> letterCount = new HashMap<>();
-
-        for (char c : wordInChar) {
-            if (Character.isLowerCase(c)) {
-                letterCount.put('_', letterCount.getOrDefault('_',0) + 1);
-            } else {
-                letterCount.put(c, letterCount.getOrDefault(c,0) + 1);
-            }
-        }
-
-        Map<Character, Integer> tileCount = player.getHand().stream()
-                .collect(groupingBy(Tile::getLetter, summingInt(tile -> 1)));
-
-        for (Character key : letterCount.keySet()) {
-            if (!tileCount.containsKey(key) || letterCount.get(key) > tileCount.get(key)) {
-                throw new IllegalMoveException("You don't have the necessary tiles for that word. Please try again:");
-            }
-        }
-
-    }
-
+    /**
+     * Asks player whether an open or closed game or is desired.
+     * @return true if open game requested, false otherwise.
+     */
     private boolean confirmOpenGame() {
         while (true) {
             System.out.print("""
@@ -272,6 +289,11 @@ public class GameRunner {
         }
     }
 
+    /**
+     * Creates a new player object, either human or CPU, with name "Player " + number that is passed in.
+     * @param playerNumber The number to be assigned to the player name.
+     * @return A new player HumanPlayer or CPU player object.
+     */
     private Player requestPlayer(int playerNumber) {
         while (true) {
             System.out.printf("""
@@ -280,16 +302,20 @@ public class GameRunner {
                     """, playerNumber);
             switch (scanner.nextLine()) {
                 case "h" -> {
-                    return new HumanPlayer("Player " + playerNumber);
+                    return new HumanPlayer("Player " + playerNumber, board);
                 }
                 case "c" -> {
-                    return new CPU("Player " + playerNumber);
+                    return new CPU("Player " + playerNumber, board);
                 }
                 default -> System.out.println("Please enter a valid choice.");
             }
         }
     }
 
+    /**
+     * Asks user if board should be parsed from default or custom, user-provided file.
+     * @return new Board object parsed from file.
+     */
     public Board requestBoard() {
         while (true) {
             System.out.print("""
@@ -308,51 +334,6 @@ public class GameRunner {
                 default -> System.out.println("Please enter a valid choice.");
             }
         }
-    }
-
-    // Place tiles on the board and return score
-    // Maybe should be in the player class?
-    public int makeMove(Move move) {
-        if (isFirstMove) firstMoveTaken();
-        int score = 0;
-        int wordMultiplier = 1;
-        int x = move.coordinate().x();
-        int y = move.coordinate().y();
-        int i = 0;
-
-        if (move.vertical()) score += addScoresAbove(x, y);
-        else score += addScoresLeft(x, y);
-
-        // Place tiles on the board and add up scores
-        while (i < move.word().size()) {
-            var square = board.getSquare(x, y);
-            if (square.getTile() != null) {
-                score += square.getTile().getTileMultiplier();
-            }
-            else {
-                Tile tile = move.word().get(i);
-                square.placeTile(tile);
-                switch (square) {
-                    case WordPremiumSquare wordPremiumSquare -> {
-                        wordMultiplier *= wordPremiumSquare.getMultiplier();
-                        score += tile.getTileMultiplier();
-                    }
-                    case LetterPremiumSquare letterPremiumSquare ->
-                            score += letterPremiumSquare.getMultiplier() * tile.getTileMultiplier();
-                    default -> score += tile.getTileMultiplier();
-                }
-                i++;
-            }
-
-            if (!move.vertical()) x++;
-            else y++;
-        }
-
-        // Add scores of existing tiles to the right/below
-        if (move.vertical()) score += addScoresBelow(x, y);
-        else score += addScoresRight(x, y);
-
-        return score * wordMultiplier;
     }
 
     /**
@@ -375,6 +356,13 @@ public class GameRunner {
         return false;
     }
 
+    /**
+     * Checks if the given word is valid and playable given the current state of the board.
+     * @param move The move to validated.
+     * @return The completed word as String (including pre-existing tiles on the board).
+     * @throws IllegalMoveException In case move doesn't fit on board, move doesn't occupy the start square
+     * on turn one, or move runs parallel to existing tiles.
+     */
     public String validateMove(Move move) throws IllegalMoveException {
 
         boolean usedStartSquare = false;
@@ -397,7 +385,7 @@ public class GameRunner {
 
             try {
                 currentSquare = board.getSquare(x, y);
-                if (isFirstMove && board.getStartSquare().equals(new Coordinate(x,y))) usedStartSquare = true;
+                if (board.isFirstMove() && board.getStartSquare().equals(new Coordinate(x,y))) usedStartSquare = true;
             } catch (IndexOutOfBoundsException e) {
                 throw new IllegalMoveException("Error: not enough squares on the board!");
             }
@@ -407,7 +395,6 @@ public class GameRunner {
                 isAdjacentMove = true;
             } else {
                 // Check for tiles perpendicular to word (not allowed)
-                // Could be its own method?
                 if (move.vertical()) {
                     if (x == 0) {
                         if (board.getSquare(x + 1, y).getTile() != null) {
@@ -451,59 +438,22 @@ public class GameRunner {
             sb.append(endWord);
         }
 
-        if (isFirstMove && !usedStartSquare) {
+        if (board.isFirstMove() && !usedStartSquare) {
             throw new IllegalMoveException("Error: the first move must use the start square " + board.getStartSquare() + ".");
         }
 
-        if (!isFirstMove && !isAdjacentMove) {
+        if (!board.isFirstMove() && !isAdjacentMove) {
             throw new IllegalMoveException("Error: your word must use a letter already on the board.");
         }
 
         String wordString = sb.toString();
 
+        //To do: this should happen outside of this method!
         if (!isValidWord(wordString)) {
             throw new IllegalMoveException("Error: " + wordString + " is not a valid word, please try again:");
         }
 
         return wordString;
-    }
-
-    private int addScoresLeft(int x, int y) {
-        x = x - 1;
-        int score = 0;
-        while (x >= 0 && board.getSquare(x, y).getTile() != null)  {
-            score += board.getSquare(x, y).getTile().getTileMultiplier();
-            x--;
-        }
-        return score;
-    }
-
-    private int addScoresRight(int x, int y) {
-        int score = 0;
-        while (x < board.getSizeX() && board.getSquare(x, y).getTile() != null)  {
-            score += board.getSquare(x, y).getTile().getTileMultiplier();
-            x++;
-        }
-        return score;
-    }
-
-    private int addScoresAbove(int x, int y) {
-        y = y - 1;
-        int score = 0;
-        while (y >= 0 && board.getSquare(x, y).getTile() != null)  {
-            score += board.getSquare(x, y).getTile().getTileMultiplier();
-            y--;
-        }
-        return score;
-    }
-
-    private int addScoresBelow(int x, int y) {
-        int score = 0;
-        while (y < board.getSizeY() && board.getSquare(x, y).getTile() != null)  {
-            score += board.getSquare(x, y).getTile().getTileMultiplier();
-            y++;
-        }
-        return score;
     }
 
     /**
@@ -562,19 +512,4 @@ public class GameRunner {
         return result.reverse().toString();
     }
 
-    public void setBoard(Board board) {
-        this.board = board;
-    }
-
-    public void setTileBag(TileBag tileBag) {
-        this.tileBag = tileBag;
-    }
-
-    public void setPlayer1(Player player) {
-        this.Player1 = player;
-    }
-
-    public void setPlayer2(Player player) {
-        this.Player2 = player;
-    }
 }

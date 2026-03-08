@@ -6,7 +6,7 @@ import java.util.List;
 
 public record Move(List<Tile> word, Coordinate coordinate, boolean vertical) {
 
-    //Not useful?
+    //Not used?
     public String wordToString() {
         var sb = new StringBuilder();
         for (Tile tile : word) {
@@ -14,5 +14,6 @@ public record Move(List<Tile> word, Coordinate coordinate, boolean vertical) {
         }
         return sb.toString();
     }
+
 
 }

@@ -2,6 +2,7 @@ package pij.tile;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import pij.board.BoardParser;
 import pij.game.HumanPlayer;
 import pij.game.Player;
 
@@ -23,7 +24,7 @@ public class TileTest {
         for (Tile tile: tileBag.getContents()) {
             tileCount.put(tile.getLetter(), (tileCount.getOrDefault(tile.getLetter(), 0) + 1));
         }
-        testPlayer = new HumanPlayer("testPlayer");
+        testPlayer = new HumanPlayer("testPlayer", BoardParser.parseBoardFromFile());
     }
 
     @Test

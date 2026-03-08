@@ -2,8 +2,13 @@ package pij.board;
 
 import java.util.List;
 
+/**
+ * Object that contains a matrix of Square objects representing the board for a game of ScraeBBKle. Contains a reference
+ * to the start square, and flag to indicate if first move is taken or not.
+ */
 public class Board {
 
+    private boolean firstMove = true;
     private final List<List<Square>> board;
     private final Coordinate startSquare;
     private final int SizeX;
@@ -14,6 +19,14 @@ public class Board {
         this.startSquare = startSquare;
         this.SizeX = board.getFirst().size();
         this.SizeY = board.size();
+    }
+
+    public void firstMoveTaken() {
+        firstMove = false;
+    }
+
+    public boolean isFirstMove() {
+        return firstMove;
     }
 
     public int getSizeX() {
@@ -36,8 +49,11 @@ public class Board {
         return board.get(y).get(x);
     }
 
+    /**
+     * Prints a convenient and readable representation of the board to the console for players to view.
+     */
     public void printBoard() {
-        String alphaIndices = generateAlphaIndices(board.getFirst().size());
+        String alphaIndices = generateAlphaIndices();
         System.out.println(alphaIndices);
         System.out.println();
         int rowCount = 1;
@@ -55,9 +71,13 @@ public class Board {
         System.out.println(alphaIndices);
     }
 
-    private String generateAlphaIndices(int length) {
+    /**
+     * Helper method that generates alphabetical indices to be printed at top and bottom of board.
+     * @return String representation of alphabetical indices.
+     */
+    private String generateAlphaIndices() {
         var sb = new StringBuilder("    ");
-        for (int i = 0; i < board.getFirst().size(); i++) {
+        for (int i = 0; i < getSizeX(); i++) {
             sb.append(" ")
                     .append(Coordinate.intToChar(i))
                     .append(" ");

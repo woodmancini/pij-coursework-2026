@@ -60,7 +60,11 @@ public class TileBag {
         }
     }
 
-    public void deal(Player recipient, List<Tile> tiles) {
+    public void deal(Player recipient, String word) {
+        List<Tile> tiles = new ArrayList<>();
+        for (char c : word.toCharArray()) {
+            tiles.add(new Tile(c));
+        }
         if (!contents.containsAll(tiles)) {
             System.out.println("Not enough tiles in the bag.");
             return;

@@ -14,7 +14,8 @@ import java.io.*;
 import java.util.*;
 
 /**
- * Runner class that manages the states of a game of ScraeBBKle, requests command line input from players,
+ * Runner class that manages the state of a game of ScraeBBKle while accepting input from user(s). Also provides
+ * functionality for validating player moves on the board.
  */
 public class GameRunner {
 
@@ -32,23 +33,23 @@ public class GameRunner {
     public Player getPlayer2() {
         return Player2;
     }
-    public Board getBoard() {
-        return board;
-    }
-    public TileBag getTileBag() {
-        return tileBag;
-    }
-    public void setBoard(Board board) {
-        this.board = board;
-    }
-    public void setTileBag(TileBag tileBag) {
-        this.tileBag = tileBag;
-    }
     public void setPlayer1(Player player) {
         this.Player1 = player;
     }
     public void setPlayer2(Player player) {
         this.Player2 = player;
+    }
+    public Board getBoard() {
+        return board;
+    }
+    public void setBoard(Board board) {
+        this.board = board;
+    }
+    public TileBag getTileBag() {
+        return tileBag;
+    }
+    public void setTileBag(TileBag tileBag) {
+        this.tileBag = tileBag;
     }
 
     /**

@@ -65,15 +65,15 @@ public class TileBag {
         for (char c : word.toCharArray()) {
             tiles.add(new Tile(c));
         }
-        if (!contents.containsAll(tiles)) {
-            System.out.println("Not enough tiles in the bag.");
-            return;
-        }
         if (tiles.size() > tilesRemaining()) {
             System.out.println("Not enough tiles in the bag.");
             return;
         }
         for (Tile tile : tiles) {
+            if (!contents.contains(tile)) {
+                System.out.println("Not enough tiles in the bag.");
+                return;
+            }
             contents.remove(tile);
         }
         recipient.drawTiles(tiles);

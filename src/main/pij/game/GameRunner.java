@@ -80,7 +80,7 @@ public class GameRunner {
         Player currentPlayer;
         while (!tileBag.getContents().isEmpty() && !Player1.getHand().isEmpty() && !Player2.getHand().isEmpty()) {
 
-            //Should deal happen here?
+            //Switch on type? CPU can call findMove() directly without having to request input.
             if (passCount >= 4) return;
             currentPlayer = (turnCount % 2 == 0) ? Player1 : Player2;
             Move move = requestMove(currentPlayer);
@@ -175,7 +175,7 @@ public class GameRunner {
 
                 player.checkHasTiles(wordInChar);
 
-                move = buildMove(wordInChar, coordinate);
+                move = Move.buildMove(wordInChar, coordinate);
 
                 finalWord = validateMove(move);
 
@@ -189,50 +189,6 @@ public class GameRunner {
             return move;
 
         }
-    }
-
-    /**
-     * Takes in a char[] and String coordinate and returns a new Move object.
-     * @param wordInChar char[] representing the word to be played.
-     * @param coordinate String in the format d7 or 7d representing the coordinate of start square of the move.
-     * @return Move object representing the move.
-     * @throws IllegalMoveException for an invalid move (ie coordinate not parsable, index out of bounds for current board).
-     */
-    public Move buildMove(char[] wordInChar, String coordinate) throws IllegalMoveException {
-
-        List<Tile> wordInTiles = new ArrayList<>();
-        boolean vertical = false;
-        int x, y, length = coordinate.length();
-
-        for (char c : wordInChar) {
-            wordInTiles.add(new Tile(c));
-        }
-
-        // What error does this throw? Can I catch it?
-        try {
-            if (Character.isLetter(coordinate.charAt(0))) {
-                vertical = true;
-                x = Coordinate.charToInt(coordinate.charAt(0));
-                y = Integer.parseInt(coordinate.substring(1)) - 1;
-            } else if (Character.isLetter(coordinate.charAt(length - 1))) {
-                x = Coordinate.charToInt(coordinate.charAt(length - 1));
-                y = Integer.parseInt(coordinate.substring(0, length - 1)) - 1;
-            } else throw new IllegalMoveException(coordinate + " is not a valid square, please try again:");
-        } catch (NumberFormatException e) {
-            throw new IllegalMoveException(coordinate + " is not a valid square, please try again:");
-        }
-
-        try {
-            board.getSquare(x,y);
-        } catch (IndexOutOfBoundsException e) {
-            throw new IllegalMoveException(coordinate + " is not a valid square, please try again:");
-        }
-//        if (x >= board.getSizeX() || y >= board.getSizeY()) {
-//            throw new IllegalMoveException(coordinate + " is not a valid square, please try again:");
-//        }
-
-        return new Move(wordInTiles, new Coordinate(x, y), vertical);
-
     }
 
     /**
@@ -375,6 +331,13 @@ public class GameRunner {
         int maxY = board.getSizeY() - 1;
         int maxX = board.getSizeX() - 1;
         int i = 0;
+
+        //Does this work?
+        try {
+            board.getSquare(x,y);
+        } catch (IndexOutOfBoundsException e) {
+            throw new IllegalMoveException(move.coordinate() + " is not a valid square, please try again:");
+        }
 
         String startWord = move.vertical() ? checkAbove(x, y) : checkLeft(x, y);
         if (!startWord.isEmpty()) {

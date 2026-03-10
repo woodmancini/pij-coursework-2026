@@ -22,7 +22,7 @@ public class GameTest {
     }
 
     void playMove(String word, String position, Player player) throws IllegalMoveException {
-        Move move = runner.buildMove(word.toCharArray(), position);
+        Move move = Move.buildMove(word.toCharArray(), position);
         runner.validateMove(move);
         player.makeMove(move);
     }

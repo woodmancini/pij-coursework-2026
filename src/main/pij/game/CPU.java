@@ -39,7 +39,7 @@ public final class CPU extends Player {
                 permutations.add(permutation);
             }
 
-            //Not sure what this
+            //Not sure what this is
 //            for (int k = 0; k > handSize - i; k++) {
 //                tileSubset.clear();
 //                tileSubset.addAll(getHand());
@@ -88,7 +88,7 @@ public final class CPU extends Player {
             Map<String, List<String>> wordsToSorted = new HashMap<>();
 
             Path wordListPath = Path.of(System.getProperty("user.dir"), "resources", "wordlist.txt");
-            try (Stream<String> lines = Files.lines(wordListPath)){
+            try (Stream<String> lines = Files.lines(wordListPath)) {
                 wordsToSorted = lines.filter(line -> line.length() == wordLength)
                         .map(String::strip)
                         .collect(groupingBy(line -> alphaSort(line)));
@@ -123,7 +123,9 @@ public final class CPU extends Player {
         return null;
     }
 
-    private Move wordSearch(List<Tile> tiles) {
+    //Just call this function on every permutation, of lengths 7, 6, 5, 4, 3, 2?
+    //What are we passing in? A subset of tiles that is <= hand.
+    private Move findFirstWord(List<Tile> tiles) {
         Coordinate startSquare = getBoard().getStartSquare();
         int wordLength = tiles.size();
         int x = startSquare.x();
@@ -164,7 +166,7 @@ public final class CPU extends Player {
         Map<String, List<String>> wordsToSorted = new HashMap<>();
 
         Path wordListPath = Path.of(System.getProperty("user.dir"), "resources", "wordlist.txt");
-        try (Stream<String> lines = Files.lines(wordListPath)){
+        try (Stream<String> lines = Files.lines(wordListPath)) {
             wordsToSorted = lines.filter(line -> line.length() == wordLength)
                     .map(String::strip)
                     .collect(groupingBy(line -> alphaSort(line)));
@@ -193,10 +195,11 @@ public final class CPU extends Player {
             }
         }
 
-        return new Move(moveInTiles, validVertCoordinates.getFirst(), true);
+        var random = new Random();
+        if (random.nextBoolean()) return new Move(moveInTiles, validVertCoordinates.getFirst(), true);
+        else return new Move(moveInTiles, validHorizCoordinates.getFirst(), false);
 
-
-}
+    }
 
     private String alphaSort(String string) {
         var chars = string.toLowerCase().toCharArray();
@@ -204,7 +207,42 @@ public final class CPU extends Player {
         return new String(chars);
     }
 
+    public static List<List<Integer>> generateCombinations(int n, int k) {
+        List<List<Integer>> result = new ArrayList<>();
+        backtrack(1, n, k, new ArrayList<>(), result);
+        return result;
+    }
+
+    private static void backtrack(int start, int n, int k, List<Integer> current, List<List<Integer>> result) {
+        // Base case: If our current combination has k elements, add it to the result
+        if (current.size() == k) {
+            result.add(new ArrayList<>(current));
+            return;
+        }
+
+        // Loop through the remaining numbers.
+        // The upper bound is optimized to stop early if there aren't enough numbers left to finish a combination.
+        int limit = n - (k - current.size()) + 1;
+        for (int i = start; i <= limit; i++) {
+            current.add(i);                    // 1. Choose the number
+            backtrack(i + 1, n, k, current, result); // 2. Explore further
+            current.remove(current.size() - 1);      // 3. Un-choose (backtrack)
+        }
+    }
+
+    public static void main(String[] args) {
+        int n = 7;
+        int k = 5;
+
+        List<List<Integer>> combos = generateCombinations(n, k);
+
+        System.out.println("Total combinations: " + combos.size());
+        for (List<Integer> combo : combos) {
+            System.out.println(combo);
+        }
+    }
 }
+
 
 /*
         So it has to make A move wherever possible, not necessarily the BEST move.

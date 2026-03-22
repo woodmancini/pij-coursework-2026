@@ -16,6 +16,10 @@ public class Square {
         this.tile = tile;
     }
 
+    public boolean hasTile() {
+        return tile != null;
+    }
+
     public int getMultiplier() {
         return multiplier;
     }

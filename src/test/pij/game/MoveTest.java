@@ -17,7 +17,7 @@ public class MoveTest {
     Player player2;
 
     int playMove(String word, String position, Player player) throws IllegalMoveException {
-        Move move = Move.buildMove(word.toCharArray(), position);
+        Move move = Move.buildMove(word, position);
         runner.validateMove(move);
         return player.makeMove(move);
     }
@@ -128,7 +128,7 @@ public class MoveTest {
 
     @Test
     void testMustUseStartSquare() throws IllegalMoveException {
-        Move move = Move.buildMove("DINED".toCharArray(), "e4");
+        Move move = Move.buildMove("DINED", "e4");
         assertThrows(IllegalMoveException.class, () -> runner.validateMove(move));
     }
 
@@ -142,7 +142,7 @@ public class MoveTest {
 
     @Test
     void testOutOfBoundsMove() throws IllegalMoveException {
-        Move move = Move.buildMove("AARDVARKS".toCharArray(), "d7");
+        Move move = Move.buildMove("AARDVARKS", "d7");
         assertThrows(IllegalMoveException.class, () -> runner.validateMove(move));
     }
 
@@ -179,7 +179,7 @@ public class MoveTest {
         playMove("TNZON","7c", player2);
         playMove("OVE","4e", player1);
         playMove("PRSN","g3", player1);
-        Move illegalMove = Move.buildMove("BRKE".toCharArray(), "e2");
+        Move illegalMove = Move.buildMove("BRKE", "e2");
         assertThrows(IllegalMoveException.class, () -> runner.validateMove(illegalMove));
     }
 

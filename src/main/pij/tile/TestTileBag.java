@@ -5,8 +5,6 @@ import java.util.List;
 
 public class TestTileBag extends TileBag {
 
-
-
     public TestTileBag() {
         emptyBag();
         addTiles('H', 1);

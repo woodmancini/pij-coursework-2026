@@ -6,6 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * Tile bag object that contains the standard set of 100 tiles for a game of ScraeBKKle.
+ * Can deal to a Player
+ */
 public class TileBag {
 
     public static final int TILES_PER_PLAYER = 7;
@@ -60,6 +64,11 @@ public class TileBag {
         }
     }
 
+    /**
+     * Deals a specific set of Tiles (given in String form) to the specified player.
+     * @param recipient Player to deal to.
+     * @param word String representation of Tiles to deal.
+     */
     public void deal(Player recipient, String word) {
         List<Tile> tiles = new ArrayList<>();
         for (char c : word.toCharArray()) {

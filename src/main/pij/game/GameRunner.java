@@ -86,10 +86,12 @@ public class GameRunner {
             Move move = requestMove(currentPlayer);
 
             if (move == null) {
+                System.out.println("The move is: pass!");
                 passCount++;
                 continue;
             }
 
+            //Need to print out the move to console!
             currentPlayer.makeMove((move));
             printScores();
 
@@ -154,6 +156,11 @@ public class GameRunner {
                 Entering "," passes the turn.
                 """, player.getName(), player.handToString());
 
+        if (player instanceof CPU computerPlayer) {
+            if (board.isFirstMove()) return computerPlayer.findFirstMove();
+            else return computerPlayer.findMove();
+        }
+
         while (true) {
 
             String input = scanner.nextLine().replaceAll("\\s+", "");
@@ -170,12 +177,13 @@ public class GameRunner {
 
                 String[] inputStrings = validateMoveInput(input);
 
-                char[] wordInChar = inputStrings[0].toCharArray();
+                String word = inputStrings[0];
                 String coordinate = inputStrings[1];
 
-                player.checkHasTiles(wordInChar);
+                player.checkHasTiles(word);
 
-                move = Move.buildMove(wordInChar, coordinate);
+
+                move = Move.buildMove(word, coordinate);
 
                 finalWord = validateMove(move);
 
@@ -262,7 +270,7 @@ public class GameRunner {
                     return new HumanPlayer("Player " + playerNumber, board);
                 }
                 case "c" -> {
-                    return new CPU("Player " + playerNumber, board);
+                    return new CPU("Player " + playerNumber, board, this);
                 }
                 default -> System.out.println("Please enter a valid choice.");
             }
@@ -315,9 +323,9 @@ public class GameRunner {
 
     /**
      * Checks if the given word is valid and playable given the current state of the board.
-     * @param move The move to validated.
+     * @param move The move to be validated.
      * @return The completed word as String (including pre-existing tiles on the board).
-     * @throws IllegalMoveException In case move doesn't fit on board, move doesn't occupy the start square
+     * @throws IllegalMoveException If move doesn't fit on board, move doesn't occupy the start square
      * on turn one, or move runs parallel to existing tiles.
      */
     public String validateMove(Move move) throws IllegalMoveException {

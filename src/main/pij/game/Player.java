@@ -56,14 +56,14 @@ public abstract sealed class Player permits HumanPlayer, CPU {
 
     /**
      * Checks if this player has the required tiles in hand to play a given move.
-     * @param wordInChar char[] representation of word to be checked.
+     * @param word String representation of word to be checked.
      * @throws IllegalMoveException If player does not have necessary tiles in hand.
      */
-    public void checkHasTiles(char[] wordInChar) throws IllegalMoveException {
+    public void checkHasTiles(String word) throws IllegalMoveException {
 
         Map<Character, Integer> letterCount = new HashMap<>();
 
-        for (char c : wordInChar) {
+        for (char c : word.toCharArray()) {
             if (Character.isLowerCase(c)) {
                 letterCount.put('_', letterCount.getOrDefault('_',0) + 1);
             } else {

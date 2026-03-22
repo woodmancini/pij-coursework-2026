@@ -18,14 +18,15 @@ public record Move(List<Tile> word, Coordinate coordinate, boolean vertical) {
     }
 
     /**
-     * Takes in a char[] and String coordinate and returns a new Move object.
-     * @param wordInChar char[] representing the word to be played.
+     * Takes in a String word and String coordinate and returns a new Move object.
+     * @param word String representing the word to be played.
      * @param coordinate String in the format d7 or 7d representing the coordinate of start square of the move.
      * @return Move object representing the move.
      * @throws IllegalMoveException for an invalid move (ie coordinate not parsable, index out of bounds for current board).
      */
-    public static Move buildMove(char[] wordInChar, String coordinate) throws IllegalMoveException {
+    public static Move buildMove(String word, String coordinate) throws IllegalMoveException {
 
+        var wordInChar = word.toCharArray();
         List<Tile> wordInTiles = new ArrayList<>();
         boolean vertical = false;
         int x, y, length = coordinate.length();

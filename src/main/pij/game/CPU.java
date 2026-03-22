@@ -2,6 +2,7 @@ package pij.game;
 
 import pij.board.Board;
 import pij.board.Coordinate;
+import pij.exceptions.IllegalMoveException;
 import pij.tile.Tile;
 
 import java.io.IOException;
@@ -10,12 +11,13 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.*;
-
 public final class CPU extends Player {
 
-    public CPU(String name, Board board) {
+    private GameRunner runner;
+
+    public CPU(String name, Board board, GameRunner runner) {
         super(name, board);
+        this.runner = runner;
     }
 
     public Move findFirstMove() {
@@ -25,31 +27,11 @@ public final class CPU extends Player {
         Works for 7-letter word in hand...
          */
         int handSize = getHand().size();
-        var tileSubset = new ArrayList<Tile>();
 
-        // Outer loop: how many letters in the word? Works down from 7 to 2.
-        for (int i = handSize; i > 1; i--) {
-
-
-            // Calculate all permutations of 7 choose 6 at once, add them to list
-            var permutations = new ArrayList<List<Tile>>();
-            for (int k = 0; k < handSize; k++) {
-                var permutation = new ArrayList<Tile>(getHand());
-                permutation.remove(k);
-                permutations.add(permutation);
-            }
-
-            //Not sure what this is
-//            for (int k = 0; k > handSize - i; k++) {
-//                tileSubset.clear();
-//                tileSubset.addAll(getHand());
-//                if (k > 0) {
-//                    tileSubset.remove(k);
-//                }
-//            }
+        // Outer loop: how many letters in the word? Works down from handSize to 2.
+        for (int wordLength = handSize; wordLength > 1; wordLength--) {
 
             Coordinate startSquare = getBoard().getStartSquare();
-            int wordLength = i;
             int x = startSquare.x();
             int y = startSquare.y();
             List<Coordinate> validVertCoordinates = new ArrayList<>();
@@ -75,172 +57,158 @@ public final class CPU extends Player {
                 System.out.println();
             }
 
-            //Turn tiles in hand into String
-            StringBuilder stringBuilder = new StringBuilder();
+            List<Character> handChars = new ArrayList<>();
             for (var tile : getHand()) {
-                stringBuilder.append(tile.getLetter());
+                handChars.add(Character.toLowerCase(tile.getLetter()));
             }
 
-            //Somehow have a flag for when there's a wildcard in the hand? This won't happen every turn...
+            List<String> playableWords = findPlayableWords(wordLength);
 
-            //Sort word alphabetically
-            String sortedWord = alphaSort(stringBuilder.toString());
-            Map<String, List<String>> wordsToSorted = new HashMap<>();
+            System.out.println(playableWords);
 
-            Path wordListPath = Path.of(System.getProperty("user.dir"), "resources", "wordlist.txt");
-            try (Stream<String> lines = Files.lines(wordListPath)) {
-                wordsToSorted = lines.filter(line -> line.length() == wordLength)
-                        .map(String::strip)
-                        .collect(groupingBy(line -> alphaSort(line)));
-            } catch (IOException e) {
-                System.out.println("Error finding word list file: " + e.getMessage());
-            }
+            if (playableWords.isEmpty()) continue;
 
-            String targetWord = "";
-            if (!wordsToSorted.containsKey(sortedWord)) continue;
+            var moveInTiles = wordToTiles((playableWords.getFirst()));
 
-            targetWord = wordsToSorted.get(sortedWord).getFirst();
+            var random = new Random();
 
-            //Check this CPU has necessary tiles, also remove them.
-            var moveInTiles = new ArrayList<Tile>();
-            for (char c : targetWord.toCharArray()) {
-                Tile tile = new Tile(Character.toUpperCase(c));
-                if (getHand().contains(tile)) {
-                    moveInTiles.add(tile);
-                    getHand().remove(tile);
-                } else {
-                    tile = new Tile(c);
-                    if (getHand().contains(tile)) {
-                        moveInTiles.add(tile);
-                        getHand().remove(tile);
-                    }
-                }
-            }
-
+//            Randomly play horizontal or vertical move
+//            if (random.nextBoolean() && !validVertCoordinates.isEmpty()) return new Move(moveInTiles, validVertCoordinates.getFirst(), true);
+//            else if (!validHorizCoordinates.isEmpty()) return new Move(moveInTiles, validHorizCoordinates.getFirst(), false);
             return new Move(moveInTiles, validVertCoordinates.getFirst(), true);
 
         }
         return null;
     }
 
-    //Just call this function on every permutation, of lengths 7, 6, 5, 4, 3, 2?
-    //What are we passing in? A subset of tiles that is <= hand.
-    private Move findFirstWord(List<Tile> tiles) {
-        Coordinate startSquare = getBoard().getStartSquare();
-        int wordLength = tiles.size();
-        int x = startSquare.x();
-        int y = startSquare.y();
-        List<Coordinate> validVertCoordinates = new ArrayList<>();
-        List<Coordinate> validHorizCoordinates = new ArrayList<>();
+    public Move findMove() {
 
-        for (int j = wordLength - 1; j >= 0; j--) {
-            if (y - j < 0) continue;
-            validVertCoordinates.add(new Coordinate(x, y - j));
-        }
+        System.out.println(getName() + " is thinking...");
+        var squaresWithTiles = new HashMap<Coordinate, Character>();
 
-        for (int j = wordLength - 1; j >= 0; j--) {
-            if (x - j < 0) continue;
-            validHorizCoordinates.add(new Coordinate(x - j, y));
-        }
-
-        for (var coord : validVertCoordinates) {
-            System.out.print("Valid starting coordinates for vertical move: " + coord + " ");
-            System.out.println();
-        }
-
-        for (var coord : validHorizCoordinates) {
-            System.out.print("Valid starting coordinates for horizontal move: " + coord + " ");
-            System.out.println();
-        }
-
-        //Turn tiles in hand into String
-        StringBuilder stringBuilder = new StringBuilder();
-        for (var tile : getHand()) {
-            stringBuilder.append(tile.getLetter());
-        }
-
-        //Somehow have a flag for when there's a wildcard in the hand? This won't happen every turn...
-
-        //Sort word alphabetically
-        String sortedWord = alphaSort(stringBuilder.toString());
-        Map<String, List<String>> wordsToSorted = new HashMap<>();
-
-        Path wordListPath = Path.of(System.getProperty("user.dir"), "resources", "wordlist.txt");
-        try (Stream<String> lines = Files.lines(wordListPath)) {
-            wordsToSorted = lines.filter(line -> line.length() == wordLength)
-                    .map(String::strip)
-                    .collect(groupingBy(line -> alphaSort(line)));
-        } catch (IOException e) {
-            System.out.println("Error finding word list file: " + e.getMessage());
-        }
-
-        String targetWord = "";
-        if (!wordsToSorted.containsKey(sortedWord)) return null;
-
-        targetWord = wordsToSorted.get(sortedWord).getFirst();
-
-        //Check this CPU has necessary tiles, also remove them.
-        var moveInTiles = new ArrayList<Tile>();
-        for (char c : targetWord.toCharArray()) {
-            Tile tile = new Tile(Character.toUpperCase(c));
-            if (getHand().contains(tile)) {
-                moveInTiles.add(tile);
-                getHand().remove(tile);
-            } else {
-                tile = new Tile(c);
-                if (getHand().contains(tile)) {
-                    moveInTiles.add(tile);
-                    getHand().remove(tile);
+        for (int y = 0; y < getBoard().getSizeY(); y++) {
+            for (int x = 0; x < getBoard().getSizeX(); x++) {
+                var square = getBoard().getSquare(x,y);
+                if (getBoard().getSquare(x,y).hasTile()) {
+                    squaresWithTiles.put(new Coordinate(x,y), square.getTile().getLetter());
                 }
             }
         }
 
-        var random = new Random();
-        if (random.nextBoolean()) return new Move(moveInTiles, validVertCoordinates.getFirst(), true);
-        else return new Move(moveInTiles, validHorizCoordinates.getFirst(), false);
-
+        //Looks for largest possible word, then works its way down
+        for (int i = getHand().size() + 1; i > 1; i--) {
+            //Iterate through squares on the board which already have tiles
+            for (var key : squaresWithTiles.keySet()) {
+                //Try to use tile as first letter in word, then second, etc
+                for (int j = 0; j < i; j++) {
+                    Optional<String> result = findPlayableWords(i,
+                            j, squaresWithTiles.get(key));
+                    if (result.isEmpty()) continue;
+                    String possibleWord = result.get();
+                    //System.out.println("Possible word to play: " + possibleWord);
+                    var moveInTiles = wordToTiles(possibleWord);
+                    Move moveHorizontal = new Move(moveInTiles, key, false);
+                    try {
+                        runner.validateMove(moveHorizontal);
+                        return moveHorizontal;
+                    } catch (IllegalMoveException e) {}
+                    Move moveVertical = new Move(moveInTiles, key, true);
+                    try {
+                        runner.validateMove(moveVertical);
+                        return moveVertical;
+                    } catch (IllegalMoveException e) {}
+                }
+            }
+        }
+        return null;
     }
 
-    private String alphaSort(String string) {
-        var chars = string.toLowerCase().toCharArray();
-        Arrays.sort(chars);
-        return new String(chars);
+    private List<Tile> wordToTiles(String word) {
+        var moveInTiles = new ArrayList<Tile>();
+        var hand = new ArrayList<>(getHand());
+        for (char c : word.toCharArray()) {
+            Tile tile = new Tile(Character.toUpperCase(c));
+            if (hand.contains(tile)) {
+                moveInTiles.add(tile);
+                hand.remove(tile);
+            } else if (hand.contains(new Tile(c))) {
+                tile = new Tile(c);
+                if (getHand().contains(tile)) {
+                    moveInTiles.add(tile);
+                    hand.remove(tile);
+                }
+            }
+        }
+        return moveInTiles;
     }
 
-    public static List<List<Integer>> generateCombinations(int n, int k) {
-        List<List<Integer>> result = new ArrayList<>();
-        backtrack(1, n, k, new ArrayList<>(), result);
-        return result;
+    private boolean hasTiles(String targetWord) {
+        return hasTiles(targetWord, getHand());
     }
 
-    private static void backtrack(int start, int n, int k, List<Integer> current, List<List<Integer>> result) {
-        // Base case: If our current combination has k elements, add it to the result
-        if (current.size() == k) {
-            result.add(new ArrayList<>(current));
-            return;
+    private boolean hasTiles(String targetWord, List<Tile> list) {
+        var hand = new ArrayList<>(list);
+        for (char c : targetWord.toCharArray()) {
+            Tile tile = new Tile(Character.toUpperCase(c));
+            if (hand.contains(tile)) {
+                hand.remove(tile);
+            } else if (hand.contains(new Tile(c))) {
+                tile = new Tile(c);
+                if (getHand().contains(tile)) {
+                    hand.remove(tile);
+                }
+            } else return false;
+        }
+        return true;
+    }
+
+    private List<String> findPlayableWords(int wordLength) {
+
+        List<Character> handChars = new ArrayList<>();
+
+        for (var tile : getHand()) {
+            handChars.add(Character.toLowerCase(tile.getLetter()));
         }
 
-        // Loop through the remaining numbers.
-        // The upper bound is optimized to stop early if there aren't enough numbers left to finish a combination.
-        int limit = n - (k - current.size()) + 1;
-        for (int i = start; i <= limit; i++) {
-            current.add(i);                    // 1. Choose the number
-            backtrack(i + 1, n, k, current, result); // 2. Explore further
-            current.remove(current.size() - 1);      // 3. Un-choose (backtrack)
+        List<String> playableWords = new ArrayList<String>();
+        Path wordListPath = Path.of(System.getProperty("user.dir"), "resources", "wordlist.txt");
+
+        try (Stream<String> lines = Files.lines(wordListPath)) {
+            playableWords = lines.map(String::strip)
+                    .filter(line -> line.length() == wordLength)
+                    //Optimisation - only search words which start with a letter in hand
+                    .filter(line -> handChars.contains(line.charAt(0)))
+                    .filter(line -> hasTiles(line))
+                    .toList();
+        } catch (IOException e) {
+            System.out.println("Error finding word list file: " + e.getMessage());
         }
+        return playableWords;
     }
 
-    public static void main(String[] args) {
-        int n = 7;
-        int k = 5;
+    private Optional<String> findPlayableWords(int wordLength, int index, char letterOnBoard) {
 
-        List<List<Integer>> combos = generateCombinations(n, k);
+        char letterLowerCase = Character.toLowerCase(letterOnBoard);
 
-        System.out.println("Total combinations: " + combos.size());
-        for (List<Integer> combo : combos) {
-            System.out.println(combo);
+        List<Tile> completeHand = new ArrayList<>(getHand());
+        completeHand.add(new Tile(Character.toUpperCase(letterOnBoard)));
+
+        Optional<String> playableWord = Optional.empty();
+        Path wordListPath = Path.of(System.getProperty("user.dir"), "resources", "wordlist.txt");
+
+        try (Stream<String> lines = Files.lines(wordListPath)) {
+            playableWord = lines.map(String::strip)
+                    .filter(line -> line.length() == wordLength)
+                    .filter(line -> line.charAt(index) == letterLowerCase)
+                    .filter(line -> hasTiles(line, completeHand))
+                    .findFirst();
+        } catch (IOException e) {
+            System.out.println("Error finding word list file: " + e.getMessage());
         }
+        return playableWord;
     }
+
+
 }
 
 

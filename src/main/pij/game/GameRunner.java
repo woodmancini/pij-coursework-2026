@@ -106,10 +106,13 @@ public class GameRunner {
      */
     public int endGame() {
 
+        board.printBoard();
         Player1.deductRemainingTiles();
         Player2.deductRemainingTiles();
         System.out.printf("""
+                
                 Game over!
+                
                 Player 1 scored %s points.
                 Player 2 scored %s points.%n
                 """, Player1.getScore(), Player2.getScore());
@@ -192,6 +195,8 @@ public class GameRunner {
                 continue;
             }
 
+            //CPU player doesn't do this!
+            //TO DO
             System.out.printf("The move is... word: %s at position %s.%n", finalWord, move.coordinate());
 
             return move;

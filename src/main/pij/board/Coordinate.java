@@ -23,6 +23,7 @@ public record Coordinate(int x, int y) {
         return alphabet.indexOf(c);
     }
 
+
     //Could add coordinate.left() and coordinate.right() to return new coordinate in that direction?
 
 }

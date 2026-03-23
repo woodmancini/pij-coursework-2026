@@ -19,7 +19,7 @@ public class TileBagHalfSize extends TileBag {
         addTiles('M', 1);
         addTiles('N', 4);
         addTiles('O', 4);
-        addTiles('P', 1);
+        addTiles('P', 3);
         addTiles('Q', 1);
         addTiles('R', 3);
         addTiles('S', 2);

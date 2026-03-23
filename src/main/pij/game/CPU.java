@@ -89,7 +89,7 @@ public final class CPU extends Player {
         for (int y = 0; y < getBoard().getSizeY(); y++) {
             for (int x = 0; x < getBoard().getSizeX(); x++) {
                 var square = getBoard().getSquare(x,y);
-                if (getBoard().getSquare(x,y).hasTile()) {
+                if (square.hasTile()) {
                     squaresWithTiles.put(new Coordinate(x,y), square.getTile().getLetter());
                 }
             }
@@ -97,32 +97,48 @@ public final class CPU extends Player {
 
         //Looks for largest possible word, then works its way down
         for (int i = getHand().size() + 1; i > 1; i--) {
+            System.out.println(i);
+            //Check how long the 'runway' is: do we actually have space to play an 8-letter word?
             //Iterate through squares on the board which already have tiles
             for (var key : squaresWithTiles.keySet()) {
+                //All tiles trick - we could use the alphaSort idea to speed things up? And skip the j loop?
                 //Try to use tile as first letter in word, then second, etc
                 for (int j = 0; j < i; j++) {
                     Optional<String> result = findPlayableWords(i,
                             j, squaresWithTiles.get(key));
                     if (result.isEmpty()) continue;
-                    String possibleWord = result.get();
+                    var sb = new StringBuilder(result.get());
+                    //String entireWord = sb.toString();
+                    String possibleWord = sb.deleteCharAt(j).toString();
                     //System.out.println("Possible word to play: " + possibleWord);
                     var moveInTiles = wordToTiles(possibleWord);
-                    Move moveHorizontal = new Move(moveInTiles, key, false);
-                    try {
-                        runner.validateMove(moveHorizontal);
-                        return moveHorizontal;
-                    } catch (IllegalMoveException e) {}
-                    Move moveVertical = new Move(moveInTiles, key, true);
-                    try {
-                        runner.validateMove(moveVertical);
-                        return moveVertical;
-                    } catch (IllegalMoveException e) {}
+                    if (key.x() - j >= 0) {
+                        Move moveHorizontal = new Move(moveInTiles, new Coordinate(key.x() - j, key.y()), false);
+                        try {
+                            runner.validateMove(moveHorizontal);
+                            System.out.println("j is " + j);
+                            System.out.println("i is " + i);
+                            System.out.println(moveInTiles);
+                            return moveHorizontal;
+                        } catch (IllegalMoveException e) {}
+                    }
+                    if (key.y() >= 0) {
+                        Move moveVertical = new Move(moveInTiles, new Coordinate(key.x(), key.y() - j), true);
+                        try {
+                            runner.validateMove(moveVertical);
+                            System.out.println("j is " + j);
+                            System.out.println("i is " + i);
+                            System.out.println(moveInTiles);
+                            return moveVertical;
+                        } catch (IllegalMoveException e) {}
+                    }
                 }
             }
         }
         return null;
     }
 
+    //So this only returns Tiles that the player actually has...
     private List<Tile> wordToTiles(String word) {
         var moveInTiles = new ArrayList<Tile>();
         var hand = new ArrayList<>(getHand());
@@ -133,7 +149,7 @@ public final class CPU extends Player {
                 hand.remove(tile);
             } else if (hand.contains(new Tile(c))) {
                 tile = new Tile(c);
-                if (getHand().contains(tile)) {
+                if (hand.contains(tile)) {
                     moveInTiles.add(tile);
                     hand.remove(tile);
                 }

@@ -11,6 +11,8 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.groupingBy;
+
 public final class CPU extends Player {
 
     private GameRunner runner;
@@ -47,20 +49,15 @@ public final class CPU extends Player {
                 validHorizCoordinates.add(new Coordinate(x - j, y));
             }
 
-            for (var coord : validVertCoordinates) {
-                System.out.print("Valid starting coordinates for vertical move: " + coord + " ");
-                System.out.println();
-            }
-
-            for (var coord : validHorizCoordinates) {
-                System.out.print("Valid starting coordinates for horizontal move: " + coord + " ");
-                System.out.println();
-            }
-
-            List<Character> handChars = new ArrayList<>();
-            for (var tile : getHand()) {
-                handChars.add(Character.toLowerCase(tile.getLetter()));
-            }
+//            for (var coord : validVertCoordinates) {
+//                System.out.print("Valid starting coordinates for vertical move: " + coord + " ");
+//                System.out.println();
+//            }
+//
+//            for (var coord : validHorizCoordinates) {
+//                System.out.print("Valid starting coordinates for horizontal move: " + coord + " ");
+//                System.out.println();
+//            }
 
             List<String> playableWords = findPlayableWords(wordLength);
 
@@ -75,6 +72,8 @@ public final class CPU extends Player {
 //            Randomly play horizontal or vertical move
 //            if (random.nextBoolean() && !validVertCoordinates.isEmpty()) return new Move(moveInTiles, validVertCoordinates.getFirst(), true);
 //            else if (!validHorizCoordinates.isEmpty()) return new Move(moveInTiles, validHorizCoordinates.getFirst(), false);
+
+            // TO DO Should validate this move before returning it?
             return new Move(moveInTiles, validVertCoordinates.getFirst(), true);
 
         }
@@ -83,24 +82,123 @@ public final class CPU extends Player {
 
     public Move findMove() {
 
+        getBoard().printPlayable();
+        getBoard().printCoordinates();
         System.out.println(getName() + " is thinking...");
         var squaresWithTiles = new HashMap<Coordinate, Character>();
 
+        //Can I check the runway at this stage?
         for (int y = 0; y < getBoard().getSizeY(); y++) {
             for (int x = 0; x < getBoard().getSizeX(); x++) {
                 var square = getBoard().getSquare(x,y);
                 if (square.hasTile()) {
                     squaresWithTiles.put(new Coordinate(x,y), square.getTile().getLetter());
+                    //How to retain info that a given square is viableVert/Horiz...
+                    //Iterate through squares and return list of Squares which hasTile();
+                    //Can also check (later) if square.hasNeighboursX(), square.hasNeighboursY() and set square.playable()
+                    //Square knows its own tile/letter so that's fine...
+                    //But needs to know its own coordinate...
+
+//                    try {
+//                        if (getBoard().getSquare(x + 1, y).hasTile() ||
+//                                getBoard().getSquare(x - 1, y).hasTile()) {
+//                            viableHoriz = false;
+//                        }
+//                    } catch (IndexOutOfBoundsException e) {}
+//                    try {
+//                        if (getBoard().getSquare(key.x(), key.y() + 1).hasTile() ||
+//                                getBoard().getSquare(key.x(), key.y() - 1).hasTile()) {
+//                            viableVert = false;
+//                        }
+//                    } catch (IndexOutOfBoundsException e) {}
                 }
             }
         }
 
+        String handString = handToWord();
+        int handSize = getHand().size();
+
+
+        //With this ordering of the loops, it will try to find an 8-letter word on every tile, then 7, etc
         //Looks for largest possible word, then works its way down
-        for (int i = getHand().size() + 1; i > 1; i--) {
+        for (int i = handSize + 1; i > 1; i--) {
             System.out.println(i);
             //Check how long the 'runway' is: do we actually have space to play an 8-letter word?
             //Iterate through squares on the board which already have tiles
             for (var key : squaresWithTiles.keySet()) {
+                //Index Out Of Bounds error on line below??
+                if (!getBoard().getSquare(key).isPlayable()) continue;
+                //if clear on left and right, proceed
+                boolean viableHoriz = true;
+                boolean viableVert = true;
+                try {
+                    if (getBoard().getSquare(key.x() + 1, key.y()).hasTile() ||
+                            getBoard().getSquare(key.x() - 1, key.y()).hasTile()) {
+                        viableHoriz = false;
+                    }
+                } catch (IndexOutOfBoundsException e) {}
+                try {
+                    if (getBoard().getSquare(key.x(), key.y() + 1).hasTile() ||
+                            getBoard().getSquare(key.x(), key.y() - 1).hasTile()) {
+                        viableVert = false;
+                    }
+                } catch (IndexOutOfBoundsException e) {}
+
+                //Could mark this for the future with a boolean in Tile? if (Tile.playable())...
+                //If it's not playable this round, it won't be in future turns either...
+                //Tile can't be used because boxed in
+                if (!viableVert && !viableHoriz) {
+                    getBoard().getSquare(key).notPlayable();
+                    continue;
+                }
+
+                String handComplete = handString + squaresWithTiles.get(key);
+                String handSorted = alphaSort(handComplete);
+
+                if (i == handSize + 1) {
+                    var result = alphaSearch(handSorted);
+                    if (result.isEmpty()) continue;
+                    String wordMatch = result.get();
+                    var sb = new StringBuilder(wordMatch);
+                    int index = wordMatch.indexOf(Character.toLowerCase(squaresWithTiles.get(key)));
+                    sb.deleteCharAt(index);
+                    var moveInTiles = wordToTiles(sb.toString());
+                    if (viableVert) {
+                        if (key.y() >= 0) {
+                            Move moveVertical = new Move(moveInTiles, new Coordinate(key.x(), key.y() - index), true);
+                            try {
+                                runner.validateMove(moveVertical);
+                                System.out.println("i is " + i);
+                                System.out.println(moveInTiles);
+                                System.out.println("USED ALPHA METHOD");
+                                return moveVertical;
+                            } catch (IllegalMoveException e) {}
+                        }
+                    }
+                    if (viableHoriz) {
+                        if (key.x() - index >= 0) {
+                            Move moveHorizontal = new Move(moveInTiles, new Coordinate(key.x() - index, key.y()), false);
+                            try {
+                                runner.validateMove(moveHorizontal);
+                                System.out.println("i is " + i);
+                                System.out.println(moveInTiles);
+                                System.out.println("USED ALPHA METHOD");
+                                return moveHorizontal;
+                            } catch (IllegalMoveException e) {}
+                        }
+                    }
+
+                    //alphaSearch for a valid word using max number of tiles in hand
+                    //Find index of the key's letter (letter on the board); remove char from word at that index
+                    //This index is where to play the move...
+                    //Validate move and return
+                }
+
+                //alphaSearch 8 choose 7 version of the word because this is easy (fori, sb.deleteCharAt(i), etc)...
+
+
+
+                //Check how long the 'runway' is: do we actually have space to play an 8-letter word?
                 //All tiles trick - we could use the alphaSort idea to speed things up? And skip the j loop?
                 //Try to use tile as first letter in word, then second, etc
                 for (int j = 0; j < i; j++) {
@@ -108,7 +206,10 @@ public final class CPU extends Player {
                             j, squaresWithTiles.get(key));
                     if (result.isEmpty()) continue;
                     var sb = new StringBuilder(result.get());
+
+                    //Maybe useful for returning the word to be printed to console??
                     //String entireWord = sb.toString();
+
                     String possibleWord = sb.deleteCharAt(j).toString();
                     //System.out.println("Possible word to play: " + possibleWord);
                     var moveInTiles = wordToTiles(possibleWord);
@@ -122,7 +223,7 @@ public final class CPU extends Player {
                             return moveHorizontal;
                         } catch (IllegalMoveException e) {}
                     }
-                    if (key.y() >= 0) {
+                    if (key.y() - j >= 0) {
                         Move moveVertical = new Move(moveInTiles, new Coordinate(key.x(), key.y() - j), true);
                         try {
                             runner.validateMove(moveVertical);
@@ -224,33 +325,34 @@ public final class CPU extends Player {
         return playableWord;
     }
 
+    private String alphaSort(String string) {
+        var chars = string.toLowerCase().toCharArray();
+        Arrays.sort(chars);
+        return new String(chars);
+    }
+
+    /**
+     * Returns first instance of word in wordlist.txt that matches the input when both are alphaSorted, ie they are
+     * the same set of letters (including duplicates).
+     * @param searchWord The word to be searched.
+     * @return Optional containing the matching word (unscrambled).
+     */
+    private Optional<String> alphaSearch(String searchWord) {
+
+        Optional<String> playableWord = Optional.empty();
+        Path wordListPath = Path.of(System.getProperty("user.dir"), "resources", "wordlist.txt");
+
+        try (Stream<String> lines = Files.lines(wordListPath)) {
+            playableWord = lines.map(String::strip)
+                    .filter(line -> line.length() == searchWord.length())
+                    .filter(line -> alphaSort(line).equals(searchWord))
+                    .findFirst();
+        } catch (IOException e) {
+            System.out.println("Error finding word list file: " + e.getMessage());
+        }
+
+        return playableWord;
+    }
+
 
 }
-
-
-/*
-        So it has to make A move wherever possible, not necessarily the BEST move.
-        Start with the simplest case: just making a word out of the start square with given tiles.
-        Check... AB, then all words in list starting with AB, then somehow check (containsAll?) if for each word in the
-        list that is < 8 length, I have the necessary tiles to make that word?
-         */
-
-        /*
-        Iterate through matrix, eliminating squares where it's not possible to play a move.
-        For remaining squares, check all permutations of correct amount of tiles, including tile(s) on the board.
-        Make move.
-         */
-
-        /*
-        Hint: A possible strategy to achieve this goal could be the following:
-        1. For each number n of tiles that could be played from the current tile rack (between
-                at most the number of tiles on the rack and at least 1), for each free position on the
-        board, and for both directions, check whether it is possible to play n tiles there.
-        (Often enough, the answer will be false, e.g., because no connection to the existing
-        crossword on the board would be made. There is no need to check all the possible
-        combinations of n tiles for a position and direction where they cannot be played
-        anyway!)
-        2. For those cases of part (1) where it is indeed possible to play n tiles, go through all
-        permutations of n tiles on your rack. If one of them leads to a valid move for the
-        board and the word list, make the move.
-         */

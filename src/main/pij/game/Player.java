@@ -104,6 +104,16 @@ public abstract sealed class Player permits HumanPlayer, CPU {
         return sj.toString();
     }
 
+    public String handToWord() {
+        var sj = new StringBuilder();
+        if (!hand.isEmpty()) {
+            for (Tile tile : hand) {
+                sj.append(tile.getLetter());
+            }
+        }
+        return sj.toString();
+    }
+
     /**
      * Plays the given move on the board, while updating this player's score. Also returns the score for testing purposes.
      * @param move The move to be played.

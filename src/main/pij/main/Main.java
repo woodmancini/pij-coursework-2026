@@ -5,10 +5,7 @@ import pij.exceptions.IllegalMoveException;
 import pij.game.CPU;
 import pij.game.GameRunner;
 import pij.game.Move;
-import pij.game.Player;
 import pij.tile.TileBagHalfSize;
-
-import java.util.Arrays;
 
 public class Main {
 

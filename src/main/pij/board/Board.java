@@ -19,6 +19,21 @@ public class Board {
         this.startSquare = startSquare;
         this.SizeX = board.getFirst().size();
         this.SizeY = board.size();
+        for (int y = 0; y < SizeY; y++) {
+            for (int x = 0; x < SizeX; x++) {
+                board.get(y).get(x).setCoordinate(x,y);
+            }
+        }
+    }
+
+    public void printCoordinates() {
+        for (var row : board) {
+            System.out.println();
+            for (var column : row) {
+                System.out.print(column.getCoordinate().toString() + " ");
+            }
+        }
+        System.out.println();
     }
 
     public void firstMoveTaken() {
@@ -83,6 +98,17 @@ public class Board {
                     .append(" ");
         }
         return sb.toString();
+    }
+
+    public void printPlayable() {
+        for (var row : board) {
+            System.out.println();
+            for (var column : row) {
+                if (column.isPlayable()) System.out.print(" 1 ");
+                else System.out.print(" 0 ");
+            }
+        }
+        System.out.println();
     }
 
 }

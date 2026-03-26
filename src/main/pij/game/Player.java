@@ -2,6 +2,7 @@ package pij.game;
 
 import pij.board.Board;
 import pij.board.LetterPremiumSquare;
+import pij.board.Square;
 import pij.board.WordPremiumSquare;
 import pij.exceptions.IllegalMoveException;
 import pij.tile.Tile;
@@ -21,6 +22,11 @@ public abstract sealed class Player permits HumanPlayer, CPU {
     private final List<Tile> hand = new ArrayList<>();
     private int score = 0;
     private final Board board;
+    private static final List<Square> playedSquares = new ArrayList<Square>();
+
+    public List<Square> getPlayedSquares() {
+        return playedSquares;
+    }
 
     public Player(String name, Board board) {
         this.name = name;
@@ -133,12 +139,13 @@ public abstract sealed class Player permits HumanPlayer, CPU {
         // Place tiles on the board and add up scores
         while (i < move.word().size()) {
             var square = board.getSquare(x, y);
-            if (square.getTile() != null) {
+            if (square.hasTile()) {
                 score += square.getTile().getTileMultiplier();
             }
             else {
                 Tile tile = move.word().get(i);
                 square.placeTile(tile);
+                playedSquares.add(square);
                 switch (square) {
                     case WordPremiumSquare wordPremiumSquare -> {
                         wordMultiplier *= wordPremiumSquare.getMultiplier();

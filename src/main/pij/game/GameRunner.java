@@ -78,12 +78,18 @@ public class GameRunner {
     public void playGame() {
         int passCount = 0;
         Player currentPlayer;
-        while (!tileBag.getContents().isEmpty() && !Player1.getHand().isEmpty() && !Player2.getHand().isEmpty()) {
+        while (!(Player1.getHand().isEmpty() || Player2.getHand().isEmpty())) {
 
             //Switch on type? CPU can call findMove() directly without having to request input.
             if (passCount >= 4) return;
             currentPlayer = (turnCount % 2 == 0) ? Player1 : Player2;
+
+            long startTime = System.currentTimeMillis();
             Move move = requestMove(currentPlayer);
+            long endTime = System.currentTimeMillis();
+            long duration = endTime - startTime;
+
+            System.out.printf("Move took %d milliseconds to calculate.", duration);
 
             if (move == null) {
                 System.out.println("The move is: pass!");
@@ -107,6 +113,9 @@ public class GameRunner {
     public int endGame() {
 
         board.printBoard();
+        System.out.println(Player1.getHand());
+        System.out.println(Player2.getHand());
+        //Should be ok as long as one player's hand is empty?
         Player1.deductRemainingTiles();
         Player2.deductRemainingTiles();
         System.out.printf("""

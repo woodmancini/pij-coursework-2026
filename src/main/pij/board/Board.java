@@ -1,5 +1,6 @@
 package pij.board;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -57,7 +58,7 @@ public class Board {
     }
 
     public Square getSquare(Coordinate coordinate) {
-        return board.get(coordinate.x()).get(coordinate.y());
+        return board.get(coordinate.y()).get(coordinate.x());
     }
 
     public Square getSquare(int x, int y) {
@@ -104,11 +105,47 @@ public class Board {
         for (var row : board) {
             System.out.println();
             for (var column : row) {
+                System.out.print(column.getCoordinate().toString() + "=");
                 if (column.isPlayable()) System.out.print(" 1 ");
                 else System.out.print(" 0 ");
             }
         }
         System.out.println();
     }
+
+    public Square getLeft(Coordinate coord) {
+        try {
+            return getSquare(coord.x() - 1, coord.y());
+        } catch (IndexOutOfBoundsException e) {
+            return null;
+        }
+    }
+
+    public Square getRight(Coordinate coord) {
+        try {
+            return getSquare(coord.x() + 1, coord.y());
+        } catch (IndexOutOfBoundsException e) {
+            return null;
+        }
+    }
+
+    public Square getAbove(Coordinate coord) {
+        try {
+            return getSquare(coord.x(), coord.y() - 1);
+        } catch (IndexOutOfBoundsException e) {
+            return null;
+        }
+    }
+
+    public Square getBelow(Coordinate coord) throws IndexOutOfBoundsException {
+            return getSquare(coord.x(), coord.y() + 1);
+    }
+
+//    public boolean hasNeighboursX(Coordinate coord){
+//        return getLeft(coord).hasTile() || getRight(coord).hasTile();
+//    }
+//    public boolean hasNeighboursY(Coordinate coord){
+//        return getSquare(coord).
+//    }
 
 }

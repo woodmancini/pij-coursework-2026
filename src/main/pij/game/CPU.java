@@ -49,19 +49,7 @@ public final class CPU extends Player {
                 validHorizCoordinates.add(new Coordinate(x - j, y));
             }
 
-//            for (var coord : validVertCoordinates) {
-//                System.out.print("Valid starting coordinates for vertical move: " + coord + " ");
-//                System.out.println();
-//            }
-//
-//            for (var coord : validHorizCoordinates) {
-//                System.out.print("Valid starting coordinates for horizontal move: " + coord + " ");
-//                System.out.println();
-//            }
-
             List<String> playableWords = findPlayableWords(wordLength);
-
-            System.out.println(playableWords);
 
             if (playableWords.isEmpty()) continue;
 
@@ -74,7 +62,13 @@ public final class CPU extends Player {
 //            else if (!validHorizCoordinates.isEmpty()) return new Move(moveInTiles, validHorizCoordinates.getFirst(), false);
 
             // TO DO Should validate this move before returning it?
-            return new Move(moveInTiles, validVertCoordinates.getFirst(), true);
+            Move move = new Move(moveInTiles, validVertCoordinates.getFirst(), true);
+            try {
+                runner.validateMove(move);
+            } catch (IllegalMoveException e) {
+                throw new RuntimeException(e);
+            }
+            return move;
 
         }
         return null;
@@ -83,8 +77,8 @@ public final class CPU extends Player {
     public Move findMove() {
 
         getBoard().printPlayable();
-        getBoard().printCoordinates();
         System.out.println(getName() + " is thinking...");
+        System.out.println("Played Squares = " + getPlayedSquares());
         var squaresWithTiles = new HashMap<Coordinate, Character>();
 
         //Can I check the runway at this stage?
@@ -115,9 +109,11 @@ public final class CPU extends Player {
             }
         }
 
-        String handString = handToWord();
-        int handSize = getHand().size();
+        System.out.println(squaresWithTiles);
 
+        String handString = handToWord();
+
+        int handSize = getHand().size();
 
         //With this ordering of the loops, it will try to find an 8-letter word on every tile, then 7, etc
         //Looks for largest possible word, then works its way down
@@ -126,7 +122,6 @@ public final class CPU extends Player {
             //Check how long the 'runway' is: do we actually have space to play an 8-letter word?
             //Iterate through squares on the board which already have tiles
             for (var key : squaresWithTiles.keySet()) {
-                //Index Out Of Bounds error on line below??
                 if (!getBoard().getSquare(key).isPlayable()) continue;
                 //if clear on left and right, proceed
                 boolean viableHoriz = true;

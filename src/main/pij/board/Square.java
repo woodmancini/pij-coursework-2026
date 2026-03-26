@@ -23,6 +23,7 @@ public class Square {
     public void setCoordinate(Coordinate coord) {
         this.coordinate = coord;
     }
+
     public void setCoordinate(int x, int y) {
         this.coordinate = new Coordinate(x, y);
     }

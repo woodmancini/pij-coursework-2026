@@ -1,22 +1,17 @@
 package pij.board;
 
-import pij.tile.Tile;
-
+/**
+ * LetterPremiumSquare is a Square with a special multiplier value.
+ */
 public class LetterPremiumSquare extends Square {
 
-    private final int multiplier;
-
     public LetterPremiumSquare(int multiplier) {
-        this.multiplier = multiplier;
-    }
-
-    public int getMultiplier() {
-        return this.multiplier;
+        setMultiplier(multiplier);
     }
 
     @Override
     public String toString() {
-        if (getTile() == null) return String.valueOf(this.multiplier);
+        if (getTile() == null) return String.valueOf(getMultiplier());
         else return getTile().toString();
     }
 

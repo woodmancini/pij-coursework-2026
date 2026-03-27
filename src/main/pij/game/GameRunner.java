@@ -1,13 +1,9 @@
 package pij.game;
 
-import static java.util.stream.Collectors.*;
 import static pij.board.BoardParser.*;
-
 
 import pij.board.*;
 import pij.exceptions.IllegalMoveException;
-import pij.tile.TestTileBag;
-import pij.tile.Tile;
 import pij.tile.TileBag;
 
 import java.io.*;
@@ -168,7 +164,7 @@ public class GameRunner {
 
         if (player instanceof CPU computerPlayer) {
             if (board.isFirstMove()) return computerPlayer.findFirstMove();
-            else return computerPlayer.findMoveBetter();
+            else return computerPlayer.findMove();
         }
 
         while (true) {

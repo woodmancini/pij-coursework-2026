@@ -97,8 +97,8 @@ public abstract sealed class Player permits HumanPlayer, CPU {
     }
 
     /**
-     * Provides a readable String format of tiles in this player's hand.
-     * @return String representing this player's hand.
+     * Provides a String format of tiles in this player's hand, for printing to console.
+     * @return String in format [C], [a], [T]
      */
     public String handToString() {
         var sj = new StringJoiner(", ");
@@ -110,6 +110,10 @@ public abstract sealed class Player permits HumanPlayer, CPU {
         return sj.toString();
     }
 
+    /**
+     * Provides a String representation of tiles in this player's hand.
+     * @return String in format CaT.
+     */
     public String handToWord() {
         var sj = new StringBuilder();
         if (!hand.isEmpty()) {

@@ -9,6 +9,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Provides functionality for parsing files of type defaultBoard.txt.
+ */
 public class BoardParser {
 
     public static final int MIN_COLUMNS = 7;
@@ -16,7 +19,11 @@ public class BoardParser {
     public static final int MIN_ROWS = 10;
     public static final int MAX_ROWS = 99;
 
-    //Should there be a version that takes in an absolute filepath?
+    /**
+     * Parses .txt and returns a new Board object according to given parameters.
+     * @param filePath The path of file to be parsed.
+     * @return New Board object.
+     */
     public static Board parseBoardFromFile(String filePath) {
 
         Path boardPath = Paths.get(System.getProperty("user.dir"), filePath);
@@ -73,10 +80,19 @@ public class BoardParser {
 
     }
 
+    /**
+     * Default implementation parses the provided defaultBoard.txt file.
+     * @return New Board object.
+     */
     public static Board parseBoardFromFile() {
         return parseBoardFromFile("resources" + File.separator + "defaultBoard.txt");
     }
 
+    /**
+     * Parses line of file and returns an appropriate List of Squares.
+     * @param input Line of .txt file specifying Board parameters.
+     * @return List of Squares representing a row of the final Board object.
+     */
     private static List<Square> parseRowFromString(String input) {
         var result = new ArrayList<Square>();
         input = input.replaceAll("\\s+", "");

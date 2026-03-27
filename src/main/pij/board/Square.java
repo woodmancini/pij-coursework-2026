@@ -2,9 +2,23 @@ package pij.board;
 
 import pij.tile.Tile;
 
+/**
+ * Object representing a square/grid on the game board. Has a reference to surrounding squares for easy traversal.
+ * Contains a Tile if this square has been played.
+ * Knows its own Coordinate on the board.
+ * Extended by LetterPremiumSquare and WordPremiumSquare.
+ */
 public class Square {
 
     private int horizontalSpace;
+    private int verticalSpace;
+    private Square above;
+    private Square below;
+    private Square left;
+    private Square right;
+    private int multiplier = 1;
+    private Tile tile;
+    private Coordinate coordinate;
 
     public int getHorizontalSpace() {
         return horizontalSpace;
@@ -22,7 +36,6 @@ public class Square {
         this.verticalSpace = verticalSpace;
     }
 
-    private int verticalSpace;
     public Square getAbove() {
         return above;
     }
@@ -54,19 +67,6 @@ public class Square {
     public void setRight(Square right) {
         this.right = right;
     }
-
-    private Square above;
-    private Square below;
-    private Square left;
-    private Square right;
-
-    private boolean playable = true;
-
-    private int multiplier = 1;
-
-    private Tile tile;
-
-    private Coordinate coordinate;
 
     public Tile getTile() {
         return tile;
@@ -104,14 +104,6 @@ public class Square {
     public String toString() {
         if (this.tile == null) return " _ ";
         else return getTile().toString();
-    }
-
-    public void notPlayable() {
-        this.playable = false;
-    }
-
-    public boolean isPlayable() {
-        return playable;
     }
 
 }

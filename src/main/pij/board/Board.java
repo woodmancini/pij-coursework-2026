@@ -1,6 +1,5 @@
 package pij.board;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -33,17 +32,6 @@ public class Board {
 
     }
 
-    //Just for testing
-    public void printCoordinates() {
-        for (var row : board) {
-            System.out.println();
-            for (var column : row) {
-                System.out.print(column.getCoordinate().toString() + " ");
-            }
-        }
-        System.out.println();
-    }
-
     public void firstMoveTaken() {
         firstMove = false;
     }
@@ -73,7 +61,7 @@ public class Board {
     }
 
     /**
-     * Prints a convenient and readable representation of the board to the console for players to view.
+     * Prints a readable representation of the board to the console for players to view.
      */
     public void printBoard() {
         String alphaIndices = generateAlphaIndices();
@@ -107,48 +95,5 @@ public class Board {
         }
         return sb.toString();
     }
-
-    public void printPlayable() {
-        for (var row : board) {
-            System.out.println();
-            for (var column : row) {
-                System.out.print(column.getCoordinate().toString() + "=");
-                if (column.isPlayable()) System.out.print(" 1 ");
-                else System.out.print(" 0 ");
-            }
-        }
-        System.out.println();
-    }
-
-    public Square getLeft(Coordinate coord) {
-        try {
-            return getSquare(coord.x() - 1, coord.y());
-        } catch (IndexOutOfBoundsException e) {
-            return null;
-        }
-    }
-
-    public Square getRight(Coordinate coord) throws IndexOutOfBoundsException {
-            return getSquare(coord.x() + 1, coord.y());
-    }
-
-    public Square getAbove(Coordinate coord) {
-        try {
-            return getSquare(coord.x(), coord.y() - 1);
-        } catch (IndexOutOfBoundsException e) {
-            return null;
-        }
-    }
-
-    public Square getBelow(Coordinate coord) throws IndexOutOfBoundsException {
-            return getSquare(coord.x(), coord.y() + 1);
-    }
-
-//    public boolean hasNeighboursX(Coordinate coord){
-//        return getLeft(coord).hasTile() || getRight(coord).hasTile();
-//    }
-//    public boolean hasNeighboursY(Coordinate coord){
-//        return getSquare(coord).
-//    }
 
 }

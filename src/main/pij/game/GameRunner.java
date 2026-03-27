@@ -172,7 +172,6 @@ public class GameRunner {
             String input = scanner.nextLine().replaceAll("\\s+", "");
 
             if (input.equals(",")) {
-                System.out.println("The move is: pass!\n");
                 return null;
             }
 
@@ -198,7 +197,7 @@ public class GameRunner {
                 continue;
             }
 
-            System.out.printf("The move is... word: %s at position %s.%n", move.word(), move.getDirectionalCoord());
+            System.out.printf("The move is... word: %s at position %s.%n", move.wordToString(), move.getDirectionalCoord());
             addPlayedWord(finalWord);
 
             return move;

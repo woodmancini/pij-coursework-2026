@@ -2,24 +2,11 @@ package pij.game;
 
 import org.junit.jupiter.api.Test;
 import pij.exceptions.IllegalMoveException;
-import pij.tile.Tile;
-import java.util.ArrayList;
-import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class GameTest {
 
     private GameRunner runner;
-
-
-    private static List<Tile> stringToTiles(String input) {
-        var result = new ArrayList<Tile>();
-        var array = input.toCharArray();
-        for (char c : array) {
-            result.add(new Tile(c));
-        }
-        return result;
-    }
 
     void playMove(String word, String position, Player player) throws IllegalMoveException {
         Move move = Move.buildMove(word, position);

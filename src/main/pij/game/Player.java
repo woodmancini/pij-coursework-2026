@@ -167,11 +167,16 @@ public abstract sealed class Player permits HumanPlayer, CPU {
 
         int finalScore = score * wordMultiplier;
 
-        updateScore(finalScore);
+        if (move.word().size() == 7) {
+            finalScore += 60;
+            System.out.println("Woohoo! Bonus 60 points for playing a 7-letter move.");
+        }
 
         for (Tile tile : move.word()) {
             getHand().remove(tile);
         }
+
+        updateScore(finalScore);
 
         return finalScore;
     }

@@ -22,11 +22,18 @@ public class Board {
         this.SizeY = board.size();
         for (int y = 0; y < SizeY; y++) {
             for (int x = 0; x < SizeX; x++) {
-                board.get(y).get(x).setCoordinate(x,y);
+                var square = board.get(y).get(x);
+                square.setCoordinate(x,y);
+                if (x > 0) square.setLeft(board.get(y).get(x - 1));
+                if (y > 0) square.setAbove(board.get(y - 1).get(x));
+                if (x < SizeX - 1) square.setRight(board.get(y).get(x + 1));
+                if (y < SizeY - 1) square.setBelow(board.get(y + 1).get(x));
             }
         }
+
     }
 
+    //Just for testing
     public void printCoordinates() {
         for (var row : board) {
             System.out.println();
@@ -121,12 +128,8 @@ public class Board {
         }
     }
 
-    public Square getRight(Coordinate coord) {
-        try {
+    public Square getRight(Coordinate coord) throws IndexOutOfBoundsException {
             return getSquare(coord.x() + 1, coord.y());
-        } catch (IndexOutOfBoundsException e) {
-            return null;
-        }
     }
 
     public Square getAbove(Coordinate coord) {

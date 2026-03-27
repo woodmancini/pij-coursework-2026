@@ -26,6 +26,7 @@ public class GameRunner {
     private final Scanner scanner = new Scanner(System.in);
     private TileBag tileBag = new TileBag();
     private int turnCount = 0;
+    private List<String> playedWords = new ArrayList<>();
 
     public Player getPlayer1() {
         return Player1;
@@ -50,6 +51,9 @@ public class GameRunner {
     }
     public void setTileBag(TileBag tileBag) {
         this.tileBag = tileBag;
+    }
+    public void addPlayedWord(String word) {
+        playedWords.add(word);
     }
 
     /**
@@ -84,25 +88,21 @@ public class GameRunner {
             if (passCount >= 4) return;
             currentPlayer = (turnCount % 2 == 0) ? Player1 : Player2;
 
-            long startTime = System.currentTimeMillis();
             Move move = requestMove(currentPlayer);
-            long endTime = System.currentTimeMillis();
-            long duration = endTime - startTime;
-
-            System.out.printf("Move took %d milliseconds to calculate.", duration);
 
             if (move == null) {
-                System.out.println("The move is: pass!");
+                System.out.println("The move is: pass!\n");
                 passCount++;
+                turnCount++;
                 continue;
             }
 
-            //Need to print out the move to console!
             currentPlayer.makeMove((move));
             printScores();
 
             tileBag.deal(currentPlayer);
             turnCount++;
+            passCount = 0;
         }
     }
 
@@ -113,9 +113,7 @@ public class GameRunner {
     public int endGame() {
 
         board.printBoard();
-        System.out.println(Player1.getHand());
-        System.out.println(Player2.getHand());
-        //Should be ok as long as one player's hand is empty?
+
         Player1.deductRemainingTiles();
         Player2.deductRemainingTiles();
         System.out.printf("""
@@ -170,7 +168,7 @@ public class GameRunner {
 
         if (player instanceof CPU computerPlayer) {
             if (board.isFirstMove()) return computerPlayer.findFirstMove();
-            else return computerPlayer.findMove();
+            else return computerPlayer.findMoveBetter();
         }
 
         while (true) {
@@ -204,9 +202,8 @@ public class GameRunner {
                 continue;
             }
 
-            //CPU player doesn't do this!
-            //TO DO
-            System.out.printf("The move is... word: %s at position %s.%n", finalWord, move.coordinate());
+            System.out.printf("The move is... word: %s at position %s.%n", move.word(), move.getDirectionalCoord());
+            addPlayedWord(finalWord);
 
             return move;
 

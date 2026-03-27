@@ -17,6 +17,16 @@ public record Move(List<Tile> word, Coordinate coordinate, boolean vertical) {
         return sb.toString();
     }
 
+    public String getDirectionalCoord() {
+        String coordString = coordinate().toString();
+        if (vertical()) return coordString;
+        var sb = new StringBuilder(coordString);
+        char alphaIndex = sb.charAt(0);
+        sb.deleteCharAt(0);
+        sb.append(alphaIndex);
+        return sb.toString();
+    }
+
     /**
      * Takes in a String word and String coordinate and returns a new Move object.
      * @param word String representing the word to be played.
